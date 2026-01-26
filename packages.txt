@@ -1,0 +1,41 @@
+# Window manager
+i3-wm
+
+# Xorg (required for i3)
+xorg-server
+xorg-xinit
+xorg-xrandr
+xorg-xsetroot
+
+# Application launcher
+rofi
+
+# Terminal (used by ml4w scripts, adjust if needed)
+kitty
+
+# Clipboard + screenshots
+maim
+xclip
+
+# Audio
+pipewire
+pipewire-alsa
+pipewire-pulse
+wireplumber
+pactl
+
+# Media keys
+playerctl
+
+# Brightness
+brightnessctl
+
+# Lock screen (recommended)
+betterlockscreen
+
+# Fonts (avoid missing glyphs)
+ttf-dejavu
+noto-fonts
+
+# Keyboard tools
+setxkbmap
