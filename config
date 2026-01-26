@@ -11,10 +11,10 @@ font pango:monospace 10
 # ----------------------------------------
 # Applications
 # ----------------------------------------
-bindsym $mod+Return exec ~/.config/ml4w/settings/terminal.sh
-bindsym $mod+b exec ~/.config/ml4w/settings/browser.sh
-bindsym $mod+e exec ~/.config/ml4w/settings/filemanager.sh
-bindsym $mod+Ctrl+c exec ~/.config/ml4w/settings/calculator.sh
+bindsym $mod+Return exec kitty # terminal
+bindsym $mod+b exec firefox # browser
+bindsym $mod+e exec nautilus # filemanager
+bindsym $mod+Ctrl+c exec gnome-calculator # calculator
 
 # App launcher
 bindsym $mod+Ctrl+Return exec rofi -show drun -i
@@ -133,9 +133,8 @@ bindsym XF86AudioPause exec playerctl pause
 bindsym XF86AudioNext exec playerctl next
 bindsym XF86AudioPrev exec playerctl previous
 
-bindsym XF86Calculator exec ~/.config/ml4w/settings/calculator.sh
+bindsym XF86Calculator exec gnome-calculator # calculator
 bindsym $mod+l exec i3lock
-bindsym XF86Tools exec flatpak run com.ml4w.settings
 
 # ----------------------------------------
 # Visuals (absolute minimum)

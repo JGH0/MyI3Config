@@ -39,3 +39,8 @@ noto-fonts
 
 # Keyboard tools
 setxkbmap
+
+# Utils
+firefox
+gnome-calculator
+nautilus
