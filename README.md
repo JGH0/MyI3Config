@@ -4,86 +4,117 @@ This repository contains a very minimal and practical **i3 window manager** conf
 It is designed to stay close to upstream i3 behavior while adding a few convenience features
 for daily use.
 
-The configuration focuses on:
+The goal is:
 - Predictable tiling behavior
 - Keyboard-driven workflow
 - Minimal visual noise
-- Easy extensibility
+- Easy extensibility via simple shell scripts
 
 No external theming frameworks or heavy abstractions are used.
+
+---
+
+## Concept: Application Settings
+
+All user-configurable applications are defined inside the `settings/` directory.
+
+Each file contains **only the binary name**, for example:
+
+```sh
+firefox
+```
+
+The i3 config itself handles the `exec` logic and simply reads these files.
+This keeps configuration clean and avoids hardcoding application names.
+
+If an application does not exist on the system, the installer will warn the user.
 
 ---
 
 ## Features
 
 - i3 (X11) based setup
-- Mouse-follow focus (focus follows mouse hover)
+- Focus follows mouse
 - Simple, readable keybindings
 - Keyboard layout switching (e.g. `ch_de` ↔ `us_workman`)
-- Window moving and resizing via keyboard
-- Minimal logout / power menu overlay
-- Multi-monitor friendly (using `xrandr`)
-- Compatible with standard i3 tools
+- Keyboard-driven window movement and resizing
+- Minimal logout / power overlay
+- Multi-monitor friendly (`xrandr`)
+- No hidden logic or frameworks
 
 ---
 
-## Required Packages
-
-Install the following packages on Arch Linux:
+## Required Packages (Arch Linux)
 
 ### Core
 - `i3-wm`
-- `i3status` or `i3status-rust` (optional, if you use a status bar)
-- `dmenu` or `rofi` (used for menus / overlays)
 - `xorg-server`
 - `xorg-xinit`
+- `dmenu` or `rofi`
 
 ### Utilities
-- `xrandr` (monitor configuration)
-- `setxkbmap` (keyboard layout switching)
-- `picom` (optional compositor)
-- `alacritty` or `kitty` (terminal emulator)
-- `feh` (optional, wallpaper)
-- `playerctl` (optional, media keys)
-- `brightnessctl` (optional, brightness keys)
-
-### Lock / Power (optional)
-- `i3lock` or `i3lock-color`
-- `systemd` (already present on most systems)
-
-Example install command:
-
-```bash
-sudo pacman -S i3-wm dmenu xrandr setxkbmap xorg-xinit
-```
+- `xrandr`
+- `setxkbmap`
+- `picom` (optional)
+- `feh` (optional)
+- `playerctl` (optional)
+- `brightnessctl` (optional)
 
 ---
 
 ## Installation
 
-1. Clone the repository:
+### 1. Clone the repository
+
 ```bash
 git clone https://github.com/<your-username>/MyI3Repo.git
+cd MyI3Repo
 ```
 
-2. Create the i3 config directory:
+---
+
+### 2. Run the installer
+
 ```bash
-mkdir -p ~/.config/i3
+./install.sh
 ```
 
-3. Copy the config:
+The installer will:
+
+- Ask if you want to install the i3 configuration
+- Copy the config to `~/.config/i3`
+- Ask which terminal, browser, file manager, and calculator you want to use
+- Validate that the chosen applications exist
+- Write the selected application names into `settings/*.sh`
+
+If an application is not found, you will be asked again.
+
+---
+
+### 3. Log into i3
+
+When starting i3 for the first time:
+- **Do NOT generate a new config**
+- Use the installed configuration
+
+---
+
+## packages.txt
+
+The `packages.txt` file contains a suggested list of packages you may want to install.
+It is intentionally not installed automatically to keep full user control.
+
+Example:
+
 ```bash
-cp MyI3Repo/config ~/.config/i3/config
+sudo pacman -S --needed - < packages.txt
 ```
-
-4. Log into an i3 session.
-If asked to generate a config, **choose NO**.
 
 ---
 
 ## Notes
 
-- This config is intentionally minimal.
-- You are expected to adjust keybindings, monitors, and applications to your system.
-- All logic is kept inside the i3 config file for transparency.
-- No scripts are required unless you explicitly add them.
+- This configuration is intentionally minimal
+- Everything is plain text and easy to understand
+- No magic, no hidden behavior
+- You are encouraged to fork and modify this setup to your needs

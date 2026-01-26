@@ -7,40 +7,41 @@ xorg-xinit
 xorg-xrandr
 xorg-xsetroot
 
-# Application launcher
+# Application launcher (used for menus / overlays)
 rofi
 
-# Terminal (used by ml4w scripts, adjust if needed)
+# Terminal emulator (default, can be changed via settings/)
 kitty
 
-# Clipboard + screenshots
+# Clipboard & screenshots
 maim
 xclip
 
-# Audio
+# Audio (PipeWire stack)
 pipewire
 pipewire-alsa
 pipewire-pulse
 wireplumber
 pactl
 
-# Media keys
+# Media control keys
 playerctl
 
-# Brightness
+# Brightness control
 brightnessctl
 
-# Lock screen (recommended)
-betterlockscreen
+# Lock screen (optional but recommended)
+i3lock
+xss-lock
 
-# Fonts (avoid missing glyphs)
+# Fonts (to avoid missing glyphs)
 ttf-dejavu
 noto-fonts
 
 # Keyboard tools
 setxkbmap
 
-# Utils
+# Common applications (examples, configurable via settings/)
 firefox
 gnome-calculator
 nautilus
