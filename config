@@ -1,0 +1,151 @@
+# ----------------------------------------
+# Minimal i3 config (no fluff, no bar)
+# ----------------------------------------
+
+# Mod key (SUPER)
+set $mod Mod4
+
+# Font (needed even without bar)
+font pango:monospace 10
+
+# ----------------------------------------
+# Applications
+# ----------------------------------------
+bindsym $mod+Return exec ~/.config/ml4w/settings/terminal.sh
+bindsym $mod+b exec ~/.config/ml4w/settings/browser.sh
+bindsym $mod+e exec ~/.config/ml4w/settings/filemanager.sh
+bindsym $mod+Ctrl+c exec ~/.config/ml4w/settings/calculator.sh
+
+# App launcher
+bindsym $mod+Ctrl+Return exec rofi -show drun -i
+
+# ----------------------------------------
+# Window management
+# ----------------------------------------
+bindsym $mod+q kill
+bindsym $mod+Shift+q exec xkill
+
+bindsym $mod+f fullscreen toggle
+bindsym $mod+t floating toggle
+bindsym $mod+j split toggle
+bindsym $mod+m fullscreen toggle  # max is fullscreen in i3
+
+# ----------------------------------------
+# Super+Ctrl+Q menu
+# ----------------------------------------
+bindsym $mod+Control+q exec --no-startup-id ~/.config/i3/overlay-menu.sh
+
+# ----------------------------------------
+# Super+Shift+Q: kill all windows of same class
+# ----------------------------------------
+bindsym $mod+Shift+q exec --no-startup-id sh -c "CLASS=\$(xprop -id \$(xdotool getactivewindow) WM_CLASS | awk -F '\"' '{print \$4}'); for W in \$(wmctrl -lx | awk -v class=\"\$CLASS\" '\$3 ~ class {print \$1}'); do wmctrl -ic \$W; done"
+
+# ----------------------------------------
+# Focus movement
+# ----------------------------------------
+bindsym $mod+Left focus left
+bindsym $mod+Down focus down
+bindsym $mod+Up focus up
+bindsym $mod+Right focus right
+
+# ----------------------------------------
+# Move windows (Super+Ctrl+Arrow) + warp cursor
+# ----------------------------------------
+bindsym $mod+Control+Left move left; move cursor to window
+bindsym $mod+Control+Down move down; move cursor to window
+bindsym $mod+Control+Up move up; move cursor to window
+bindsym $mod+Control+Right move right; move cursor to window
+
+# Fallback for older i3 (<4.21) using xdotool:
+# bindsym $mod+Control+Left move left; exec xdotool mousemove --window $(xdotool getactivewindow) 50 50
+# bindsym $mod+Control+Down move down; exec xdotool mousemove --window $(xdotool getactivewindow) 50 50
+# bindsym $mod+Control+Up move up; exec xdotool mousemove --window $(xdotool getactivewindow) 50 50
+# bindsym $mod+Control+Right move right; exec xdotool mousemove --window $(xdotool getactivewindow) 50 50
+
+# ----------------------------------------
+# Resize windows (Super+Shift+Arrow)
+# ----------------------------------------
+bindsym $mod+Shift+Left resize shrink width 10 px or 10 ppt
+bindsym $mod+Shift+Down resize grow height 10 px or 10 ppt
+bindsym $mod+Shift+Up resize shrink height 10 px or 10 ppt
+bindsym $mod+Shift+Right resize grow width 10 px or 10 ppt
+
+# ----------------------------------------
+# Workspaces
+# ----------------------------------------
+bindsym $mod+1 workspace 1
+bindsym $mod+2 workspace 2
+bindsym $mod+3 workspace 3
+bindsym $mod+4 workspace 4
+bindsym $mod+5 workspace 5
+bindsym $mod+6 workspace 6
+bindsym $mod+7 workspace 7
+bindsym $mod+8 workspace 8
+bindsym $mod+9 workspace 9
+bindsym $mod+0 workspace 10
+
+bindsym $mod+Shift+1 move container to workspace 1
+bindsym $mod+Shift+2 move container to workspace 2
+bindsym $mod+Shift+3 move container to workspace 3
+bindsym $mod+Shift+4 move container to workspace 4
+bindsym $mod+Shift+5 move container to workspace 5
+bindsym $mod+Shift+6 move container to workspace 6
+bindsym $mod+Shift+7 move container to workspace 7
+bindsym $mod+Shift+8 move container to workspace 8
+bindsym $mod+Shift+9 move container to workspace 9
+bindsym $mod+Shift+0 move container to workspace 10
+
+bindsym $mod+Tab workspace next
+bindsym $mod+Shift+Tab workspace prev
+
+# ----------------------------------------
+# Reload / Restart
+# ----------------------------------------
+bindsym $mod+Shift+c reload
+bindsym $mod+Shift+r restart
+
+# ----------------------------------------
+# Screenshot (X11)
+# ----------------------------------------
+bindsym $mod+Shift+s exec maim -s | xclip -selection clipboard -t image/png
+
+# ----------------------------------------
+# Keyboard layout toggle (Super+Space)
+# ----------------------------------------
+# Set once on startup
+exec --no-startup-id setxkbmap -layout ch -variant de
+# Toggle with keybind
+bindsym $mod+space exec --no-startup-id ~/.config/i3/layout-toggle.sh
+
+# ----------------------------------------
+# Media / special keys
+# ----------------------------------------
+bindsym XF86MonBrightnessUp exec brightnessctl -q s +10%
+bindsym XF86MonBrightnessDown exec brightnessctl -q s 10%-
+
+bindsym XF86AudioRaiseVolume exec pactl set-sink-volume @DEFAULT_SINK@ +2%
+bindsym XF86AudioLowerVolume exec pactl set-sink-volume @DEFAULT_SINK@ -2%
+bindsym XF86AudioMute exec pactl set-sink-mute @DEFAULT_SINK@ toggle
+bindsym XF86AudioMicMute exec pactl set-source-mute @DEFAULT_SOURCE@ toggle
+
+bindsym XF86AudioPlay exec playerctl play-pause
+bindsym XF86AudioPause exec playerctl pause
+bindsym XF86AudioNext exec playerctl next
+bindsym XF86AudioPrev exec playerctl previous
+
+bindsym XF86Calculator exec ~/.config/ml4w/settings/calculator.sh
+bindsym $mod+l exec i3lock
+bindsym XF86Tools exec flatpak run com.ml4w.settings
+
+# ----------------------------------------
+# Visuals (absolute minimum)
+# ----------------------------------------
+default_border pixel 1
+floating_modifier $mod
+focus_follows_mouse yes
+
+# ----------------------------------------
+# Startup / monitor layout
+# ----------------------------------------
+exec --no-startup-id xsetroot -cursor_name left_ptr
+exec --no-startup-id xrandr --output HDMI-1 --auto --left-of DP-2 --output DP-2 --auto
