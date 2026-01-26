@@ -28,7 +28,6 @@ ask_app() {
     local app
 
     while true; do
-        # -p prints prompt, -r prevents backslash escapes
         read -rp "$label (default: $default): " app
         app="${app:-$default}"
 
@@ -42,7 +41,6 @@ ask_app() {
         fi
     done
 }
-
 
 # ----------------------------
 # Installer
@@ -97,7 +95,8 @@ echo "$BROWSER"     > "$CFG_ROOT/settings/browser.sh"
 echo "$FILEMANAGER" > "$CFG_ROOT/settings/filemanager.sh"
 echo "$CALCULATOR"  > "$CFG_ROOT/settings/calculator.sh"
 
-chmod +x "$CFG_ROOT/i3/"*.sh
+# Make all .sh scripts executable
+find "$CFG_ROOT/settings" -type f -name "*.sh" -exec chmod +x {} \;
 
 # ----------------------------
 # Copy i3 config to ~/.config/i3/config
