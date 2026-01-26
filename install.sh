@@ -26,11 +26,16 @@ ask_app() {
     local label="$1"
     local default="$2"
     local app
+
     while true; do
+        # Print prompt and flush stdout
         printf "%s (default: %s): " "$label" "$default"
+        fflush
+
         read -r app
         app="${app:-$default}"
 
+        # check if command exists
         if command -v "${app%% *}" >/dev/null 2>&1; then
             echo "$app"
             return
@@ -40,6 +45,12 @@ ask_app() {
         fi
     done
 }
+
+# Helper function to flush stdout
+fflush() {
+    :
+}
+
 
 # ----------------------------
 # Installer
