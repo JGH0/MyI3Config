@@ -28,11 +28,8 @@ ask_app() {
     local app
 
     while true; do
-        # Print prompt and flush stdout
-        printf "%s (default: %s): " "$label" "$default"
-        fflush
-
-        read -r app
+        # -p prints prompt, -r prevents backslash escapes
+        read -rp "$label (default: $default): " app
         app="${app:-$default}"
 
         # check if command exists
@@ -44,11 +41,6 @@ ask_app() {
             echo "  install it first or choose another"
         fi
     done
-}
-
-# Helper function to flush stdout
-fflush() {
-    :
 }
 
 
