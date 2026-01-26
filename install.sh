@@ -41,6 +41,9 @@ if ! ask "Install this i3 configuration?"; then
     exit 0
 fi
 
+mkdir -p "$HOME/.config"
+mkdir -p "$I3_DIR"
+
 echo
 echo "[1/4] Installing packages..."
 sudo pacman -S --needed $(grep -v '^#' "$REPO_DIR/packages.txt")
