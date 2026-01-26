@@ -9,7 +9,7 @@ xorg-xsetroot
 xorg-xkb-utils
 
 # Application launcher
-rofi
+wofi
 
 # Terminal emulator
 kitty
@@ -42,3 +42,5 @@ noto-fonts
 firefox
 gnome-calculator
 nautilus
+
+wlogout

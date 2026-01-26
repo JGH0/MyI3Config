@@ -1,12 +1,10 @@
-#!/bin/sh
-# Fullscreen overlay menu
-OPTIONS="Reboot\nShutdown\nLock Screen\nCancel"
-CHOICE=$(echo -e $OPTIONS | rofi -dmenu -fullscreen -p "Action" -lines 4 -bw 2 -kb-accept-entry 'Return' -kb-cancel 'Escape')
+# Get screen resolution
+res_w=$(xdpyinfo | awk '/dimensions/{print $2}' | cut -d'x' -f1)
+res_h=$(xdpyinfo | awk '/dimensions/{print $2}' | cut -d'x' -f2)
 
-case "$CHOICE" in
-    "Reboot") systemctl reboot ;;
-    "Shutdown") systemctl poweroff ;;
-    "Lock Screen") i3lock ;;
-    "Cancel"|"") exit 0 ;;
-esac
+# Compute margins if needed
+w_margin=$((res_w / 4))
+h_margin=$((res_h / 4))
 
+# Launch wlogout with margins
+wlogout -T $h_margin -B $h_margin

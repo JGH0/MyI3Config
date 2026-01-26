@@ -13,7 +13,7 @@ bindsym $mod+b exec ~/.config/MyI3Config/settings/browser.sh
 bindsym $mod+e exec ~/.config/MyI3Config/settings/filemanager.sh
 bindsym $mod+Ctrl+c exec ~/.config/MyI3Config/settings/calculator.sh
 
-bindsym $mod+Ctrl+Return exec rofi -show drun -i
+bindsym $mod+Ctrl+Return exec wofi -show drun
 
 # ----------------------------------------
 # Window management
