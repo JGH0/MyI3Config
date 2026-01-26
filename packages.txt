@@ -1,47 +1,24 @@
-# Window manager
 i3-wm
-
-# Xorg (required for i3)
 xorg-server
 xorg-xinit
 xorg-xrandr
 xorg-xsetroot
-
-# Application launcher (used for menus / overlays)
 rofi
-
-# Terminal emulator (default, can be changed via settings/)
 kitty
-
-# Clipboard & screenshots
 maim
 xclip
-
-# Audio (PipeWire stack)
 pipewire
 pipewire-alsa
 pipewire-pulse
 wireplumber
-pactl
-
-# Media control keys
+pulseaudio-ctl   # use this instead of pactl
 playerctl
-
-# Brightness control
 brightnessctl
-
-# Lock screen (optional but recommended)
 i3lock
 xss-lock
-
-# Fonts (to avoid missing glyphs)
 ttf-dejavu
 noto-fonts
-
-# Keyboard tools
 setxkbmap
-
-# Common applications (examples, configurable via settings/)
 firefox
 gnome-calculator
 nautilus
