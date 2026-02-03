@@ -67,7 +67,7 @@ If an application does not exist on the system, the installer will warn the user
 ### 1. Clone the repository
 
 ```bash
-git clone https://github.com/<your-username>/MyI3Repo.git
+git clone https://github.com/JGH0/MyI3Config.git
 cd MyI3Repo
 ```
 
