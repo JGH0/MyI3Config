@@ -9,7 +9,7 @@ xorg-xsetroot
 xorg-xkb-utils
 
 # Application launcher
-wofi
+rofi
 
 # Terminal emulator
 kitty
