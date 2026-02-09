@@ -1,5 +1,5 @@
 # ----------------------------------------
-# Minimal i3 config (no fluff, no bar)
+# Minimal i3/sway config
 # ----------------------------------------
 
 set $mod Mod4
@@ -12,29 +12,25 @@ bindsym $mod+Return exec ~/.config/MyI3Config/settings/terminal.sh
 bindsym $mod+b exec ~/.config/MyI3Config/settings/browser.sh
 bindsym $mod+e exec ~/.config/MyI3Config/settings/filemanager.sh
 bindsym $mod+Ctrl+c exec ~/.config/MyI3Config/settings/calculator.sh
-
 bindsym $mod+Ctrl+Return exec --no-startup-id rofi -show drun
 
 # ----------------------------------------
 # Window management
 # ----------------------------------------
 bindsym $mod+q kill
-
-# Kill all windows of same class
-bindsym $mod+Shift+q exec --no-startup-id ~/.config/MyI3Config/i3/kill-same-class.sh
-
+bindsym $mod+Shift+q exec --no-startup-id ~/.config/MyI3Config/scripts/kill-same-class.sh
 bindsym $mod+f fullscreen toggle
 bindsym $mod+t floating toggle
 bindsym $mod+j split toggle
 bindsym $mod+m fullscreen toggle
 
-# visual monitor arrangement tool
-bindsym $mod+p exec arandr
+# visual monitor arrangement tool (handled by script)
+bindsym $mod+p exec ~/.config/MyI3Config/scripts/display-tool.sh
 
 # ----------------------------------------
 # Overlay power menu
 # ----------------------------------------
-bindsym $mod+Control+q exec --no-startup-id ~/.config/MyI3Config/i3/overlay-menu.sh
+bindsym $mod+Control+q exec --no-startup-id ~/.config/MyI3Config/scripts/overlay-menu.sh
 
 # ----------------------------------------
 # Focus / move / resize
@@ -86,20 +82,20 @@ bindsym $mod+Shift+c reload
 bindsym $mod+Shift+r restart
 
 # ----------------------------------------
-# Screenshot
+# Screenshot (handled by script)
 # ----------------------------------------
-bindsym $mod+Shift+s exec maim -s | xclip -selection clipboard -t image/png
+bindsym $mod+Shift+s exec ~/.config/MyI3Config/scripts/screenshot.sh
 
 # ----------------------------------------
-# Keyboard layout
+# Keyboard layout (handled by script)
 # ----------------------------------------
-exec --no-startup-id setxkbmap -layout ch -variant de
-bindsym $mod+space exec --no-startup-id ~/.config/MyI3Config/i3/layout-toggle.sh
+exec --no-startup-id ~/.config/MyI3Config/scripts/keyboard-setup.sh
+bindsym $mod+space exec --no-startup-id ~/.config/MyI3Config/scripts/layout-toggle.sh
 
 # ----------------------------------------
-# Lock
+# Lock (handled by script)
 # ----------------------------------------
-bindsym $mod+l exec i3lock
+bindsym $mod+l exec ~/.config/MyI3Config/scripts/lock.sh
 
 # ----------------------------------------
 # Visuals
@@ -109,7 +105,21 @@ floating_modifier $mod
 focus_follows_mouse yes
 
 # ----------------------------------------
-# Startup
+# Fn keys (Dual bindings - both syntaxes)
 # ----------------------------------------
-exec --no-startup-id xsetroot -cursor_name left_ptr
-exec --no-startup-id xrandr --output HDMI-1 --auto --left-of DP-2 --output DP-2 --auto
+
+bindsym XF86MonBrightnessUp exec brightnessctl -q s +1%
+bindsym XF86MonBrightnessDown exec brightnessctl -q s 1%-
+bindsym XF86AudioRaiseVolume exec pactl set-sink-mute @DEFAULT_SINK@ 0 && pactl set-sink-volume @DEFAULT_SINK@ +5%
+bindsym XF86AudioLowerVolume exec pactl set-sink-mute @DEFAULT_SINK@ 0 && pactl set-sink-volume @DEFAULT_SINK@ -5%
+bindsym XF86AudioMute exec pactl set-sink-mute @DEFAULT_SINK@ toggle
+bindsym XF86AudioPlay exec playerctl play-pause
+bindsym XF86AudioPause exec playerctl pause
+bindsym XF86AudioNext exec playerctl next
+bindsym XF86AudioPrev exec playerctl previous
+bindsym XF86AudioMicMute exec pactl set-source-mute @DEFAULT_SOURCE@ toggle
+
+# ----------------------------------------
+# Startup (handled by script)
+# ----------------------------------------
+exec --no-startup-id ~/.config/MyI3Config/scripts/startup.sh

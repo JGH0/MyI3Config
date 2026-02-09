@@ -1,22 +1,8 @@
-# Window manager
-i3-wm
-
-# Xorg (required for i3)
-xorg-server
-xorg-xinit
-xorg-xrandr
-xorg-xsetroot
-xorg-xkb-utils
-
 # Application launcher
 rofi
 
 # Terminal emulator
 kitty
-
-# Clipboard & screenshots
-maim
-xclip
 
 # Audio (PipeWire stack)
 pipewire
@@ -30,10 +16,6 @@ playerctl
 # Brightness control
 brightnessctl
 
-# Lock screen
-i3lock
-xss-lock
-
 # Fonts
 ttf-dejavu
 noto-fonts
@@ -43,4 +25,5 @@ firefox
 gnome-calculator
 nautilus
 
+# Power menu
 wlogout
