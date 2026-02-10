@@ -1,10 +1,8 @@
 #!/bin/bash
 
 if [ -n "$SWAYSOCK" ]; then
-    # Sway
-    swaymsg input "*" xkb_layout "ch"
-    swaymsg input "*" xkb_variant "de"
+    swaymsg input type:keyboard xkb_layout "us,ch"
+    swaymsg input type:keyboard xkb_variant "workman,de"
 else
-    # i3
-    setxkbmap -layout ch -variant de
+    setxkbmap -layout us,ch -variant workman,de
 fi
