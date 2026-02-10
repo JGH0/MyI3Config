@@ -25,34 +25,10 @@ ask_app() {
     local label="$1"
     local default="$2"
     local app
-    local first_run=true
 
     while true; do
-        if [ "$first_run" = true ]; then
-            # First run: show the prompt with default
-            read -rp "$label (default: $default): " app
-            first_run=false
-        else
-            # Subsequent runs: show a simpler prompt
-            read -rp "Enter a different command or 'skip' to continue anyway: " app
-        fi
-        
-        # Handle empty input (use default on first run, empty on subsequent runs)
-        if [ -z "$app" ]; then
-            if [ "$first_run" = false ]; then
-                # User pressed Enter on retry - ask if they want to skip
-                echo "  Press Enter again to skip, or type 'skip'"
-                continue
-            fi
-            app="$default"
-        fi
-        
-        # Allow user to skip validation
-        if [ "$app" = "skip" ]; then
-            echo "  Using '$default' (not verified)"
-            echo "$default"
-            return
-        fi
+        read -rp "$label (default: $default): " app
+        app="${app:-$default}"
 
         # check if command exists
         if command -v "${app%% *}" >/dev/null 2>&1; then
@@ -60,10 +36,7 @@ ask_app() {
             return
         else
             echo "✗ '$app' not found in PATH"
-            if [ "$first_run" = true ]; then
-                echo "  Install it with: sudo pacman -S ${app%% *}"
-                echo "  Or choose a different application"
-            fi
+            echo "  install it first or choose another"
         fi
     done
 }
