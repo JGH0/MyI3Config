@@ -1,17 +1,10 @@
-# Window manager
 i3-wm
-
-# Xorg (required for i3)
 xorg-server
 xorg-xinit
 xorg-xrandr
 xorg-xsetroot
 xorg-xkb-utils
-
-# Clipboard & screenshots (X11)
 maim
 xclip
-
-# Lock screen (X11)
 i3lock
 xss-lock
