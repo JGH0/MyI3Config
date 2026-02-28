@@ -1,16 +1,7 @@
-# Window manager (Wayland)
 sway
-
-# Screenshots (Wayland)
 grim
 slurp
-
-# Clipboard (Wayland)
 wl-clipboard
-
-# Lock screen (Wayland)
 swaylock
 swayidle
-
-# Display configuration (Wayland)
 wdisplays
