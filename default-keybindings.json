@@ -1,0 +1,232 @@
+[
+  {
+    "keyCombo": "$mod+Return",
+    "type": "app",
+    "command": "kitty"
+  },
+  {
+    "keyCombo": "$mod+b",
+    "type": "app",
+    "command": "firefox"
+  },
+  {
+    "keyCombo": "$mod+e",
+    "type": "app",
+    "command": "nautilus"
+  },
+  {
+    "keyCombo": "Ctrl+$mod+c",
+    "type": "app",
+    "command": "gnome-calculator"
+  },
+  {
+    "keyCombo": "Ctrl+$mod+Return",
+    "type": "app",
+    "command": "--no-startup-id rofi -show drun"
+  },
+  {
+    "keyCombo": "Shift+$mod+q",
+    "type": "app",
+    "command": "~/.config/MyI3Config/scripts/kill-same-class.sh"
+  },
+  {
+    "keyCombo": "Shift+$mod+1",
+    "type": "move-to-workspace",
+    "workspaceNum": 1
+  },
+  {
+    "keyCombo": "Shift+$mod+2",
+    "type": "move-to-workspace",
+    "workspaceNum": 2
+  },
+  {
+    "keyCombo": "Shift+$mod+3",
+    "type": "move-to-workspace",
+    "workspaceNum": 3
+  },
+  {
+    "keyCombo": "Shift+$mod+4",
+    "type": "move-to-workspace",
+    "workspaceNum": 4
+  },
+  {
+    "keyCombo": "Shift+$mod+5",
+    "type": "move-to-workspace",
+    "workspaceNum": 5
+  },
+  {
+    "keyCombo": "Shift+$mod+6",
+    "type": "move-to-workspace",
+    "workspaceNum": 6
+  },
+  {
+    "keyCombo": "Shift+$mod+7",
+    "type": "move-to-workspace",
+    "workspaceNum": 7
+  },
+  {
+    "keyCombo": "Shift+$mod+8",
+    "type": "move-to-workspace",
+    "workspaceNum": 8
+  },
+  {
+    "keyCombo": "Shift+$mod+9",
+    "type": "move-to-workspace",
+    "workspaceNum": 9
+  },
+  {
+    "keyCombo": "$mod+q",
+    "type": "window",
+    "action": "kill"
+  },
+  {
+    "keyCombo": "$mod+f",
+    "type": "window",
+    "action": "fullscreen toggle"
+  },
+  {
+    "keyCombo": "$mod+t",
+    "type": "window",
+    "action": "floating toggle"
+  },
+  {
+    "keyCombo": "$mod+j",
+    "type": "window",
+    "action": "split toggle"
+  },
+  {
+    "keyCombo": "$mod+m",
+    "type": "window",
+    "action": "fullscreen toggle"
+  },
+  {
+    "keyCombo": "$mod+Left",
+    "type": "window",
+    "action": "focus left"
+  },
+  {
+    "keyCombo": "$mod+Down",
+    "type": "window",
+    "action": "focus down"
+  },
+  {
+    "keyCombo": "$mod+Up",
+    "type": "window",
+    "action": "focus up"
+  },
+  {
+    "keyCombo": "$mod+Right",
+    "type": "window",
+    "action": "focus right"
+  },
+  {
+    "keyCombo": "$mod+Control+Left",
+    "type": "window",
+    "action": "move left; move cursor to window"
+  },
+  {
+    "keyCombo": "$mod+Control+Down",
+    "type": "window",
+    "action": "move down; move cursor to window"
+  },
+  {
+    "keyCombo": "$mod+Control+Up",
+    "type": "window",
+    "action": "move up; move cursor to window"
+  },
+  {
+    "keyCombo": "$mod+Control+Right",
+    "type": "window",
+    "action": "move right; move cursor to window"
+  },
+  {
+    "keyCombo": "Shift+$mod+Left",
+    "type": "window",
+    "action": "resize shrink width 10 px or 10 ppt"
+  },
+  {
+    "keyCombo": "Shift+$mod+Down",
+    "type": "window",
+    "action": "resize grow height 10 px or 10 ppt"
+  },
+  {
+    "keyCombo": "Shift+$mod+Up",
+    "type": "window",
+    "action": "resize shrink height 10 px or 10 ppt"
+  },
+  {
+    "keyCombo": "Shift+$mod+Right",
+    "type": "window",
+    "action": "resize grow width 10 px or 10 ppt"
+  },
+  {
+    "keyCombo": "Shift+$mod+c",
+    "type": "window",
+    "action": "reload"
+  },
+  {
+    "keyCombo": "Shift+$mod+r",
+    "type": "window",
+    "action": "restart"
+  },
+  {
+    "keyCombo": "$mod+1",
+    "type": "workspace",
+    "workspaceNum": 1
+  },
+  {
+    "keyCombo": "$mod+2",
+    "type": "workspace",
+    "workspaceNum": 2
+  },
+  {
+    "keyCombo": "$mod+3",
+    "type": "workspace",
+    "workspaceNum": 3
+  },
+  {
+    "keyCombo": "$mod+4",
+    "type": "workspace",
+    "workspaceNum": 4
+  },
+  {
+    "keyCombo": "$mod+5",
+    "type": "workspace",
+    "workspaceNum": 5
+  },
+  {
+    "keyCombo": "$mod+6",
+    "type": "workspace",
+    "workspaceNum": 6
+  },
+  {
+    "keyCombo": "$mod+7",
+    "type": "workspace",
+    "workspaceNum": 7
+  },
+  {
+    "keyCombo": "$mod+8",
+    "type": "workspace",
+    "workspaceNum": 8
+  },
+  {
+    "keyCombo": "$mod+9",
+    "type": "workspace",
+    "workspaceNum": 9
+  },
+  {
+    "keyCombo": "Shift+$mod+s",
+    "type": "app",
+    "command": "~/.config/MyI3Config/scripts/screenshot.sh"
+  },
+  {
+    "keyCombo": "$mod+p",
+    "type": "app",
+    "command": "~/.config/MyI3Config/scripts/display-tool.sh"
+  },
+  {
+    "keyCombo": "$mod+l",
+    "type": "app",
+    "command": "~/.config/MyI3Config/scripts/lock.sh"
+  }
+]

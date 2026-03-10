@@ -1,0 +1,30 @@
+{
+  "font": "JetBrains Mono 10",
+  "gapsInner": 0,
+  "gapsOuter": 0,
+  "colors": {
+    "focused": {
+      "border": "#4c7899",
+      "background": "#285577",
+      "text": "#ffffff",
+      "indicator": "#2e9ef4"
+    },
+    "unfocused": {
+      "border": "#333333",
+      "background": "#222222",
+      "text": "#888888"
+    },
+    "urgent": {
+      "border": "#2f343a",
+      "background": "#900000",
+      "text": "#ffffff"
+    }
+  },
+  "borderStyle": "pixel",
+  "borderPixelWidth": 1,
+  "floatingModifier": "$mod",
+  "focusFollowsMouse": "yes",
+  "wallpaperType": "static",
+  "wallpaper": "",
+  "lockImage": ""
+}

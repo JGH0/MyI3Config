@@ -1,8 +1,8 @@
 #!/bin/bash
 
-if [ -n "$SWAYSOCK" ]; then
-    swaymsg input type:keyboard xkb_layout "us,ch"
-    swaymsg input type:keyboard xkb_variant "workman,de"
-else
-    setxkbmap -layout us,ch -variant workman,de
+#keyboard-setup.sh
+#Only needed for i3 / X11
+
+if [ -z "$SWAYSOCK" ]; then
+    setxkbmap -layout ch,us -variant de,workman
 fi

@@ -3,30 +3,18 @@
 # ----------------------------------------
 
 set $mod Mod4
-font pango:monospace 10
 
 # ----------------------------------------
-# Applications (from settings/)
+# Keybindings
 # ----------------------------------------
-bindsym $mod+Return exec ~/.config/MyI3Config/settings/terminal.sh
-bindsym $mod+b exec ~/.config/MyI3Config/settings/browser.sh
-bindsym $mod+e exec ~/.config/MyI3Config/settings/filemanager.sh
-bindsym $mod+Ctrl+c exec ~/.config/MyI3Config/settings/calculator.sh
-bindsym $mod+Ctrl+Return exec --no-startup-id rofi -show drun
-bindsym $mod+v exec code
+
+include ~/.config/MyI3Config/keybindings.conf
 
 # ----------------------------------------
-# Window management
+# Theme settings
 # ----------------------------------------
-bindsym $mod+q kill
-bindsym $mod+Shift+q exec --no-startup-id ~/.config/MyI3Config/scripts/kill-same-class.sh
-bindsym $mod+f fullscreen toggle
-bindsym $mod+t floating toggle
-bindsym $mod+j split toggle
-bindsym $mod+m fullscreen toggle
 
-# visual monitor arrangement tool (handled by script)
-bindsym $mod+p exec ~/.config/MyI3Config/scripts/display-tool.sh
+include ~/.config/MyI3Config/theme.conf
 
 # ----------------------------------------
 # Overlay power menu
@@ -34,76 +22,22 @@ bindsym $mod+p exec ~/.config/MyI3Config/scripts/display-tool.sh
 bindsym $mod+Control+q exec --no-startup-id ~/.config/MyI3Config/scripts/overlay-menu.sh
 
 # ----------------------------------------
-# Focus / move / resize
+# Keyboard layout
 # ----------------------------------------
-bindsym $mod+Left focus left
-bindsym $mod+Down focus down
-bindsym $mod+Up focus up
-bindsym $mod+Right focus right
 
-bindsym $mod+Control+Left move left; move cursor to window
-bindsym $mod+Control+Down move down; move cursor to window
-bindsym $mod+Control+Up move up; move cursor to window
-bindsym $mod+Control+Right move right; move cursor to window
+# Sway: declare layouts natively
+input type:keyboard {
+    xkb_layout ch,us
+    xkb_variant de,workman
+}
 
-bindsym $mod+Shift+Left resize shrink width 10 px or 10 ppt
-bindsym $mod+Shift+Down resize grow height 10 px or 10 ppt
-bindsym $mod+Shift+Up resize shrink height 10 px or 10 ppt
-bindsym $mod+Shift+Right resize grow width 10 px or 10 ppt
-
-# ----------------------------------------
-# Workspaces
-# ----------------------------------------
-bindsym $mod+1 workspace 1
-bindsym $mod+2 workspace 2
-bindsym $mod+3 workspace 3
-bindsym $mod+4 workspace 4
-bindsym $mod+5 workspace 5
-bindsym $mod+6 workspace 6
-bindsym $mod+7 workspace 7
-bindsym $mod+8 workspace 8
-bindsym $mod+9 workspace 9
-bindsym $mod+0 workspace 10
-
-bindsym $mod+Shift+1 move container to workspace 1
-bindsym $mod+Shift+2 move container to workspace 2
-bindsym $mod+Shift+3 move container to workspace 3
-bindsym $mod+Shift+4 move container to workspace 4
-bindsym $mod+Shift+5 move container to workspace 5
-bindsym $mod+Shift+6 move container to workspace 6
-bindsym $mod+Shift+7 move container to workspace 7
-bindsym $mod+Shift+8 move container to workspace 8
-bindsym $mod+Shift+9 move container to workspace 9
-bindsym $mod+Shift+0 move container to workspace 10
-
-# ----------------------------------------
-# Reload / Restart
-# ----------------------------------------
-bindsym $mod+Shift+c reload
-bindsym $mod+Shift+r restart
-
-# ----------------------------------------
-# Screenshot (handled by script)
-# ----------------------------------------
-bindsym $mod+Shift+s exec ~/.config/MyI3Config/scripts/screenshot.sh
-
-# ----------------------------------------
-# Keyboard layout (handled by script)
-# ----------------------------------------
+# i3: initial layout setup
 exec --no-startup-id ~/.config/MyI3Config/scripts/keyboard-setup.sh
+
+# Toggle:
+# - Sway uses native layout switching
+# - i3 uses script
 bindsym $mod+space exec --no-startup-id ~/.config/MyI3Config/scripts/layout-toggle.sh
-
-# ----------------------------------------
-# Lock (handled by script)
-# ----------------------------------------
-bindsym $mod+l exec ~/.config/MyI3Config/scripts/lock.sh
-
-# ----------------------------------------
-# Visuals
-# ----------------------------------------
-default_border pixel 1
-floating_modifier $mod
-focus_follows_mouse yes
 
 # ----------------------------------------
 # Fn keys (Dual bindings - both syntaxes)
