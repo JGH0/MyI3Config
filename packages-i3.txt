@@ -8,3 +8,4 @@ maim
 xclip
 i3lock
 xss-lock
+arandr
