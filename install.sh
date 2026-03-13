@@ -251,14 +251,23 @@ if ask "Would you like to clone and build the settings app?"; then
     git clone https://github.com/JGH0/MyI3ConfigSettings.git /tmp/MyI3ConfigSettings
     cd /tmp/MyI3ConfigSettings
     echo "Building (this may take a while)..."
-    npm install
-    cargo tauri build
-    # Copy the binary to ~/.local/bin
-    BIN_DIR="$HOME/.local/bin"
-    mkdir -p "$BIN_DIR"
-    cp src-tauri/target/release/MyI3ConfigSettings "$BIN_DIR/"
-    echo "Settings app installed to $BIN_DIR/MyI3ConfigSettings"
-    echo "You can run it from terminal or create a desktop entry."
+    if npm install && cargo tauri build; then
+        # Find the built binary (may be lowercase or mixed case)
+        BINARY_PATH=$(find src-tauri/target/release -maxdepth 1 -type f -executable \( -name "myi3configsettings" -o -name "MyI3ConfigSettings" \) | head -n1)
+        if [ -n "$BINARY_PATH" ]; then
+            BIN_DIR="$HOME/.local/bin"
+            mkdir -p "$BIN_DIR"
+            cp "$BINARY_PATH" "$BIN_DIR/"
+            echo "Settings app installed to $BIN_DIR/$(basename "$BINARY_PATH")"
+            echo "You can run it from terminal or create a desktop entry."
+        else
+            echo "Error: Could not find built binary."
+        fi
+    else
+        echo "Error: Failed to build settings app. Please check the logs above."
+        echo "You can manually install it later from:"
+        echo "  https://github.com/JGH0/MyI3ConfigSettings"
+    fi
     cd - >/dev/null
     rm -rf /tmp/MyI3ConfigSettings
 else
