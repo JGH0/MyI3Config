@@ -20,74 +20,22 @@ ask() {
     [[ "$ans" =~ ^[Yy]$ ]]
 }
 
-# Ask for application and verify it exists in PATH
-ask_app() {
-    local label="$1"
-    local default="$2"
-    local app
-    local first_run=true
-
-    while true; do
-        if [ "$first_run" = true ]; then
-            read -rp "$label (default: $default): " app
-            first_run=false
-        else
-            read -rp "Enter a different command or 'skip' to continue anyway: " app
-        fi
-
-        if [ -z "$app" ]; then
-            if [ "$first_run" = false ]; then
-                echo "  Press Enter again to skip, or type 'skip'"
-                continue
-            fi
-            app="$default"
-        fi
-
-        if [ "$app" = "skip" ]; then
-            echo "  Using '$default' (not verified)"
-            echo "$default"
-            return
-        fi
-
-        if command -v "${app%% *}" >/dev/null 2>&1; then
-            echo "$app"
-            return
-        else
-            echo "✗ '$app' not found in PATH"
-            if [ "$first_run" = true ]; then
-                echo "  Install it with: sudo pacman -S ${app%% *}"
-                echo "  Or choose a different application"
-            fi
-        fi
-    done
-}
-
 # Detect if running in Sway
 is_sway() {
     [ -n "$SWAYSOCK" ] || pgrep -x sway >/dev/null 2>&1
 }
 
-# Update keybindings.json with user-chosen apps (preserve existing entries)
-update_keybindings_with_apps() {
-    local json_file="$CFG_ROOT/keybindings.json"
-    local tmp_file="$CFG_ROOT/keybindings.json.tmp"
-
-    if [ ! -f "$json_file" ]; then
-        # No existing file, create from default and substitute apps
-        cp "$REPO_DIR/default-keybindings.json" "$json_file"
+# Check if jq is installed
+check_jq() {
+    if ! command -v jq &>/dev/null; then
+        echo "Error: jq is required but not installed."
+        if ask "Would you like to install jq now?"; then
+            sudo pacman -S --needed jq
+        else
+            echo "Please install jq manually and re-run the installer."
+            exit 1
+        fi
     fi
-
-    # Use jq to replace the command fields for the specific app bindings
-    # This requires jq installed (should be, it's in packages)
-    jq --arg term "$1" \
-       --arg browser "$2" \
-       --arg fm "$3" \
-       --arg calc "$4" \
-       'map(if .keyCombo == "$mod+Return" and .type == "app" then .command = $term
-            elif .keyCombo == "$mod+b" and .type == "app" then .command = $browser
-            elif .keyCombo == "$mod+e" and .type == "app" then .command = $fm
-            elif .keyCombo == "Ctrl+$mod+c" and .type == "app" then .command = $calc
-            else . end)' "$json_file" > "$tmp_file" && mv "$tmp_file" "$json_file"
 }
 
 # Generate keybindings.conf from keybindings.json
@@ -192,10 +140,10 @@ mkdir -p "$CFG_ROOT"
 mkdir -p "$CFG_ROOT/scripts"
 
 # ----------------------------
-# 1/4: Install packages
+# 1/3: Install packages
 # ----------------------------
 echo
-echo "[1/4] Installing packages..."
+echo "[1/3] Installing packages..."
 
 PACKAGES=""
 
@@ -230,53 +178,34 @@ else
     echo "  No packages to install."
 fi
 
-# ----------------------------
-# 2/4: Choose applications
-# ----------------------------
-echo
-echo "[2/4] Choose applications..."
-TERMINAL=$(ask_app "Terminal" "kitty")
-BROWSER=$(ask_app "Browser" "firefox")
-FILEMANAGER=$(ask_app "File manager" "nautilus")
-CALCULATOR=$(ask_app "Calculator" "gnome-calculator")
+# Ensure jq is available for subsequent steps
+check_jq
 
 # ----------------------------
-# 3/4: Copy static config files (preserve user files)
+# 2/3: Copy configuration files
 # ----------------------------
 echo
-echo "[3/4] Installing MyI3Config..."
+echo "[2/3] Installing MyI3Config..."
 
 # Copy all files from the repo, but don't overwrite existing user files
 cp -rn "$REPO_DIR/." "$CFG_ROOT" 2>/dev/null || true
 
-# ----------------------------
-# 4/4: Generate/update user configuration
-# ----------------------------
-echo
-echo "[4/4] Setting up user configuration..."
-
-# Create default keybindings.json if it doesn't exist
-if [ ! -f "$CFG_ROOT/keybindings.json" ]; then
-    cp "$REPO_DIR/default-keybindings.json" "$CFG_ROOT/keybindings.json"
+# Generate conf files from default JSONs (if they exist)
+if [ -f "$CFG_ROOT/default-keybindings.json" ] && [ ! -f "$CFG_ROOT/keybindings.json" ]; then
+    cp "$CFG_ROOT/default-keybindings.json" "$CFG_ROOT/keybindings.json"
+fi
+if [ -f "$CFG_ROOT/default-theme.json" ] && [ ! -f "$CFG_ROOT/theme.json" ]; then
+    cp "$CFG_ROOT/default-theme.json" "$CFG_ROOT/theme.json"
 fi
 
-# Update the app commands in keybindings.json
-update_keybindings_with_apps "$TERMINAL" "$BROWSER" "$FILEMANAGER" "$CALCULATOR"
-
-# Create default theme.json if it doesn't exist
-if [ ! -f "$CFG_ROOT/theme.json" ]; then
-    cp "$REPO_DIR/default-theme.json" "$CFG_ROOT/theme.json"
-fi
-
-# Generate conf files from JSON
+# Generate .conf files
 generate_keybindings_conf
 generate_theme_conf
 
 # Make all scripts executable
 find "$CFG_ROOT/scripts" -type f -name "*.sh" -exec chmod +x {} \;
 
-# Ensure lock.sh is executable (it will be if it exists)
-# If lock.sh doesn't exist, create a default one
+# Ensure lock.sh exists
 if [ ! -f "$CFG_ROOT/scripts/lock.sh" ]; then
     cat > "$CFG_ROOT/scripts/lock.sh" <<'EOF'
 #!/bin/bash
@@ -313,6 +242,32 @@ else
 fi
 
 # ----------------------------
+# Optional: Install settings app
+# ----------------------------
+echo
+echo "[3/3] Optional: Install the Tauri settings app (MyI3ConfigSettings)"
+if ask "Would you like to clone and build the settings app?"; then
+    echo "Cloning MyI3ConfigSettings..."
+    git clone https://github.com/JGH0/MyI3ConfigSettings.git /tmp/MyI3ConfigSettings
+    cd /tmp/MyI3ConfigSettings
+    echo "Building (this may take a while)..."
+    npm install
+    cargo tauri build
+    # Copy the binary to ~/.local/bin
+    BIN_DIR="$HOME/.local/bin"
+    mkdir -p "$BIN_DIR"
+    cp src-tauri/target/release/MyI3ConfigSettings "$BIN_DIR/"
+    echo "Settings app installed to $BIN_DIR/MyI3ConfigSettings"
+    echo "You can run it from terminal or create a desktop entry."
+    cd - >/dev/null
+    rm -rf /tmp/MyI3ConfigSettings
+else
+    echo "Skipping settings app installation."
+    echo "You can manually install it later from:"
+    echo "  https://github.com/JGH0/MyI3ConfigSettings"
+fi
+
+# ----------------------------
 # Done
 # ----------------------------
 echo
@@ -326,5 +281,5 @@ else
     echo "For i3, reload with: Super + Shift + C"
 fi
 echo
-echo "The Tauri settings app will manage your keybindings and theme."
-echo "Run 'MyI3ConfigSettings' (or the built app) to customise further."
+echo "The Tauri settings app (if installed) will manage your keybindings and theme."
+echo "Run 'MyI3ConfigSettings' to customise further."
