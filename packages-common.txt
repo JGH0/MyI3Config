@@ -1,29 +1,14 @@
-# Application launcher
 rofi
-
-# Terminal emulator
 kitty
-
-# Audio (PipeWire stack)
 pipewire
 pipewire-alsa
 pipewire-pulse
 wireplumber
-
-# Media control keys
 playerctl
-
-# Brightness control
 brightnessctl
-
-# Fonts
 ttf-dejavu
 noto-fonts
-
-# Common applications
 firefox
 gnome-calculator
 nautilus
-
-# Power menu
 wlogout
