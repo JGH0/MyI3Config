@@ -5,13 +5,21 @@
   },
   "mouse": {
     "accelProfile": "adaptive",
-    "accelSpeed": 0.0,
+    "accelSpeed": 0,
     "naturalScroll": false,
     "tapToClick": false
   },
   "layouts": [
-    { "layout": "us", "variant": "" },
-    { "layout": "ch", "variant": "de" }
+    {
+      "layout": "us",
+      "variant": "workman"
+    },
+    {
+      "layout": "ch",
+      "variant": "de"
+    }
   ],
-  "layoutKey": ""
+  "layoutKeys": [
+    "$mod+space"
+  ]
 }
