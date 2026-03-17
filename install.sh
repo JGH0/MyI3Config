@@ -5,7 +5,6 @@ set -e
 # MyI3Config Installer
 # ----------------------------
 
-# Detect repository directory dynamically
 REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CFG_ROOT="$HOME/.config/MyI3Config"
 
@@ -13,19 +12,16 @@ CFG_ROOT="$HOME/.config/MyI3Config"
 # Functions
 # ----------------------------
 
-# Ask yes/no question
 ask() {
     printf "%s [y/N]: " "$1"
     read -r ans
     [[ "$ans" =~ ^[Yy]$ ]]
 }
 
-# Detect if running in Sway
 is_sway() {
     [ -n "$SWAYSOCK" ] || pgrep -x sway >/dev/null 2>&1
 }
 
-# Check if jq is installed
 check_jq() {
     if ! command -v jq &>/dev/null; then
         echo "Error: jq is required but not installed."
@@ -38,15 +34,10 @@ check_jq() {
     fi
 }
 
-# Generate keybindings.conf from keybindings.json
 generate_keybindings_conf() {
     local json_file="$CFG_ROOT/keybindings.json"
     local conf_file="$CFG_ROOT/keybindings.conf"
-    if [ ! -f "$json_file" ]; then
-        echo "Warning: keybindings.json not found, skipping keybindings.conf generation"
-        return
-    fi
-    # Use jq to output bindsym lines
+    [ ! -f "$json_file" ] && return
     jq -r '.[] |
         if .type == "app" then
             "bindsym " + .keyCombo + " exec " + .command
@@ -58,22 +49,15 @@ generate_keybindings_conf() {
             "bindsym " + .keyCombo + " move container to workspace " + (if .workspaceNum == 0 then "10" else .workspaceNum | tostring end)
         elif .type == "resize" then
             "bindsym " + .keyCombo + " resize " + .resizeDir + " " + (.resizeAmount | tostring) + " " + .resizeUnit
-        else
-            empty
-        end
+        else empty end
     ' "$json_file" > "$conf_file"
     echo "Generated $conf_file"
 }
 
-# Generate theme.conf from theme.json
 generate_theme_conf() {
     local json_file="$CFG_ROOT/theme.json"
     local conf_file="$CFG_ROOT/theme.conf"
-    if [ ! -f "$json_file" ]; then
-        echo "Warning: theme.json not found, skipping theme.conf generation"
-        return
-    fi
-    # Build theme.conf lines
+    [ ! -f "$json_file" ] && return
     {
         jq -r '.font | "font pango:" + .' "$json_file"
         jq -r 'if .gapsInner > 0 or .gapsOuter > 0 then
@@ -81,8 +65,7 @@ generate_theme_conf() {
                else empty end' "$json_file"
         jq -r 'if .borderStyle == "pixel" then
                 "default_border pixel \(.borderPixelWidth)"
-               else
-                "default_border \(.borderStyle)" end' "$json_file"
+               else "default_border \(.borderStyle)" end' "$json_file"
         jq -r '"floating_modifier " + .floatingModifier' "$json_file"
         jq -r '"focus_follows_mouse " + .focusFollowsMouse' "$json_file"
         jq -r '"client.focused \(.colors.focused.border) \(.colors.focused.background) \(.colors.focused.text) \(.colors.focused.indicator)"' "$json_file"
@@ -95,6 +78,45 @@ generate_theme_conf() {
     echo "Generated $conf_file"
 }
 
+generate_input_conf() {
+    local json_file="$CFG_ROOT/input.json"
+    local conf_file="$CFG_ROOT/input.conf"
+    [ ! -f "$json_file" ] && return
+    {
+        jq -r '
+            "input type:keyboard {",
+            "    repeat_rate \(.keyboard.repeatRate)",
+            "    repeat_delay \(.keyboard.repeatDelay)",
+            if .layouts | length > 0 then
+                "    xkb_layout " + (.layouts | map(.layout) | join(",")),
+                "    xkb_variant " + (.layouts | map(.variant // "") | join(","))
+            else empty end,
+            "}",
+            "input type:touchpad {",
+            "    accel_profile \(.mouse.accelProfile)",
+            "    pointer_accel \(.mouse.accelSpeed)",
+            "    natural_scroll \(if .mouse.naturalScroll then "enabled" else "disabled" end)",
+            "    tap \(if .mouse.tapToClick then "enabled" else "disabled" end)",
+            "}"
+        ' "$json_file"
+    } > "$conf_file"
+    echo "Generated $conf_file"
+}
+
+ensure_include_line() {
+    local conf_file="$1"
+    local include_line="include ~/.config/MyI3Config/${conf_file}.conf"
+    local main_config="$CFG_ROOT/i3/config"
+    if [ -f "$main_config" ]; then
+        if ! grep -q "$include_line" "$main_config"; then
+            # Insert after the keybindings include or at the end
+            sed -i "/include.*keybindings\.conf/a $include_line" "$main_config" 2>/dev/null ||
+            echo "$include_line" >> "$main_config"
+            echo "Added $include_line to main config."
+        fi
+    fi
+}
+
 # ----------------------------
 # Installer
 # ----------------------------
@@ -102,7 +124,6 @@ generate_theme_conf() {
 echo "=== MyI3Config installer ==="
 echo
 
-# Ask if installing for i3 or Sway
 echo "Select window manager:"
 echo "1) i3 (X11)"
 echo "2) Sway (Wayland)"
@@ -146,39 +167,26 @@ echo
 echo "[1/3] Installing packages..."
 
 PACKAGES=""
-
 if [ -f "$REPO_DIR/packages-common.txt" ]; then
-    echo "  Using split package configuration"
     COMMON_PACKAGES=$(grep -v '^#' "$REPO_DIR/packages-common.txt" | tr '\n' ' ')
     PACKAGES="$PACKAGES $COMMON_PACKAGES"
-
     if [ "$WM" = "sway" ] && [ -f "$REPO_DIR/packages-sway.txt" ]; then
-        echo "  Installing Sway packages..."
         SWAY_PACKAGES=$(grep -v '^#' "$REPO_DIR/packages-sway.txt" | tr '\n' ' ')
         PACKAGES="$PACKAGES $SWAY_PACKAGES"
     elif [ "$WM" = "i3" ] && [ -f "$REPO_DIR/packages-i3.txt" ]; then
-        echo "  Installing i3 packages..."
         I3_PACKAGES=$(grep -v '^#' "$REPO_DIR/packages-i3.txt" | tr '\n' ' ')
         PACKAGES="$PACKAGES $I3_PACKAGES"
-    else
-        echo "  Warning: No $WM-specific package file found"
     fi
 else
-    echo "  Using unified packages.txt"
     PACKAGES=$(grep -v '^#' "$REPO_DIR/packages.txt" | tr '\n' ' ')
 fi
 
 if [ -n "$PACKAGES" ]; then
     UNIQUE_PACKAGES=$(echo "$PACKAGES" | tr ' ' '\n' | sort -u | tr '\n' ' ')
     echo "  Installing: $UNIQUE_PACKAGES"
-    sudo pacman -S --needed $UNIQUE_PACKAGES || {
-        echo "  Some packages might have failed to install. Continuing..."
-    }
-else
-    echo "  No packages to install."
+    sudo pacman -S --needed $UNIQUE_PACKAGES || echo "  Some packages failed. Continuing..."
 fi
 
-# Ensure jq is available for subsequent steps
 check_jq
 
 # ----------------------------
@@ -187,25 +195,30 @@ check_jq
 echo
 echo "[2/3] Installing MyI3Config..."
 
-# Copy all files from the repo, but don't overwrite existing user files
 cp -rn "$REPO_DIR/." "$CFG_ROOT" 2>/dev/null || true
 
-# Generate conf files from default JSONs (if they exist)
-if [ -f "$CFG_ROOT/default-keybindings.json" ] && [ ! -f "$CFG_ROOT/keybindings.json" ]; then
+# Create default JSONs if missing
+[ -f "$CFG_ROOT/default-keybindings.json" ] && [ ! -f "$CFG_ROOT/keybindings.json" ] && \
     cp "$CFG_ROOT/default-keybindings.json" "$CFG_ROOT/keybindings.json"
-fi
-if [ -f "$CFG_ROOT/default-theme.json" ] && [ ! -f "$CFG_ROOT/theme.json" ]; then
+[ -f "$CFG_ROOT/default-theme.json" ] && [ ! -f "$CFG_ROOT/theme.json" ] && \
     cp "$CFG_ROOT/default-theme.json" "$CFG_ROOT/theme.json"
-fi
+[ -f "$CFG_ROOT/default-input.json" ] && [ ! -f "$CFG_ROOT/input.json" ] && \
+    cp "$CFG_ROOT/default-input.json" "$CFG_ROOT/input.json"
 
 # Generate .conf files
 generate_keybindings_conf
 generate_theme_conf
+generate_input_conf
 
-# Make all scripts executable
+# Ensure include lines are in main config
+for f in keybindings theme input; do
+    ensure_include_line "$f"
+done
+
+# Make scripts executable
 find "$CFG_ROOT/scripts" -type f -name "*.sh" -exec chmod +x {} \;
 
-# Ensure lock.sh exists
+# Default lock.sh if missing
 if [ ! -f "$CFG_ROOT/scripts/lock.sh" ]; then
     cat > "$CFG_ROOT/scripts/lock.sh" <<'EOF'
 #!/bin/bash
@@ -219,7 +232,7 @@ EOF
 fi
 
 # ----------------------------
-# Create symlink for config
+# 3/3: Symlink config
 # ----------------------------
 echo
 echo "Linking config..."
@@ -229,11 +242,6 @@ if [ "$WM" = "sway" ]; then
     mkdir -p "$SWAY_DIR"
     ln -sf "$CFG_ROOT/i3/config" "$SWAY_DIR/config"
     echo "Linked: $SWAY_DIR/config → $CFG_ROOT/i3/config"
-    echo
-    echo "Note: Your config is written for i3. For Sway, you may need to:"
-    echo "  1. Replace X11 commands (xrandr, xsetroot, etc.) with Wayland equivalents"
-    echo "  2. Install Sway-specific tools: grim, slurp, wl-clipboard, etc."
-    echo "  3. Update screenshot and display scripts in ~/.config/MyI3Config/scripts/"
 else
     I3_DIR="$HOME/.config/i3"
     mkdir -p "$I3_DIR"
@@ -242,38 +250,30 @@ else
 fi
 
 # ----------------------------
-# Optional: Install settings app
+# Optional: settings app
 # ----------------------------
 echo
-echo "[3/3] Optional: Install the Tauri settings app (MyI3ConfigSettings)"
+echo "[Optional] Install the Tauri settings app (MyI3ConfigSettings)"
 if ask "Would you like to clone and build the settings app?"; then
-    echo "Cloning MyI3ConfigSettings..."
     git clone https://github.com/JGH0/MyI3ConfigSettings.git /tmp/MyI3ConfigSettings
     cd /tmp/MyI3ConfigSettings
-    echo "Building (this may take a while)..."
     if npm install && cargo tauri build; then
-        # Find the built binary (may be lowercase or mixed case)
         BINARY_PATH=$(find src-tauri/target/release -maxdepth 1 -type f -executable \( -name "myi3configsettings" -o -name "MyI3ConfigSettings" \) | head -n1)
         if [ -n "$BINARY_PATH" ]; then
             BIN_DIR="$HOME/.local/bin"
             mkdir -p "$BIN_DIR"
             cp "$BINARY_PATH" "$BIN_DIR/"
-            echo "Settings app installed to $BIN_DIR/$(basename "$BINARY_PATH")"
-            echo "You can run it from terminal or create a desktop entry."
+            echo "Installed to $BIN_DIR/$(basename "$BINARY_PATH")"
         else
-            echo "Error: Could not find built binary."
+            echo "Error: Binary not found."
         fi
     else
-        echo "Error: Failed to build settings app. Please check the logs above."
-        echo "You can manually install it later from:"
-        echo "  https://github.com/JGH0/MyI3ConfigSettings"
+        echo "Build failed. See above."
     fi
     cd - >/dev/null
     rm -rf /tmp/MyI3ConfigSettings
 else
-    echo "Skipping settings app installation."
-    echo "You can manually install it later from:"
-    echo "  https://github.com/JGH0/MyI3ConfigSettings"
+    echo "Skipping. See https://github.com/JGH0/MyI3ConfigSettings"
 fi
 
 # ----------------------------
@@ -282,13 +282,10 @@ fi
 echo
 echo "✓ Done"
 echo
-
 if [ "$WM" = "sway" ]; then
     echo "For Sway, reload with: Super + Shift + C"
-    echo "Make sure to log out and select Sway from your display manager"
 else
     echo "For i3, reload with: Super + Shift + C"
 fi
 echo
-echo "The Tauri settings app (if installed) will manage your keybindings and theme."
-echo "Run 'MyI3ConfigSettings' to customise further."
+echo "The Tauri settings app (if installed) will manage your keybindings, theme, and input."

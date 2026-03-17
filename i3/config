@@ -25,19 +25,8 @@ bindsym $mod+Control+q exec --no-startup-id ~/.config/MyI3Config/scripts/overlay
 # Keyboard layout
 # ----------------------------------------
 
-# Sway: declare layouts natively
-input type:keyboard {
-    xkb_layout ch,us
-    xkb_variant de,workman
-}
+include ~/.config/MyI3Config/input.conf
 
-# i3: initial layout setup
-exec --no-startup-id ~/.config/MyI3Config/scripts/keyboard-setup.sh
-
-# Toggle:
-# - Sway uses native layout switching
-# - i3 uses script
-bindsym $mod+space exec --no-startup-id ~/.config/MyI3Config/scripts/layout-toggle.sh
 
 # ----------------------------------------
 # Fn keys (Dual bindings - both syntaxes)

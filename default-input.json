@@ -1,0 +1,17 @@
+{
+  "keyboard": {
+    "repeatRate": 30,
+    "repeatDelay": 300
+  },
+  "mouse": {
+    "accelProfile": "adaptive",
+    "accelSpeed": 0.0,
+    "naturalScroll": false,
+    "tapToClick": false
+  },
+  "layouts": [
+    { "layout": "us", "variant": "" },
+    { "layout": "ch", "variant": "de" }
+  ],
+  "layoutKey": ""
+}

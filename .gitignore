@@ -3,9 +3,12 @@ keybindings.json
 keybindings.conf
 theme.json
 theme.conf
+input.json
+input.conf
 
-# Generated theme startup script
+# Generated scripts
 scripts/theme-startup.sh
+scripts/cycle-layout.sh
 
 # User-modified scripts
 scripts/lock.sh
