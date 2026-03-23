@@ -11,5 +11,4 @@ noto-fonts
 firefox
 gnome-calculator
 nautilus
-wlogout
 jq
