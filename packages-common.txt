@@ -12,3 +12,4 @@ firefox
 gnome-calculator
 nautilus
 jq
+webkit2gtk

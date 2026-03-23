@@ -328,13 +328,28 @@ if ask "Would you like to install the settings app?"; then
     if wget -q "$RELEASE_URL" -O app.tar.gz; then
         echo "Extracting..."
         tar -xzf app.tar.gz
-        # The extracted file is `myi3configsettings`
         if [ -f "myi3configsettings" ]; then
             BIN_DIR="$HOME/.local/bin"
             mkdir -p "$BIN_DIR"
             cp "myi3configsettings" "$BIN_DIR/"
             chmod +x "$BIN_DIR/myi3configsettings"
             echo "Installed to $BIN_DIR/myi3configsettings"
+
+            # Create desktop entry so it appears in rofi/application menus
+            echo "Creating desktop entry..."
+            mkdir -p "$HOME/.local/share/applications"
+            cat > "$HOME/.local/share/applications/myi3configsettings.desktop" <<EOF
+[Desktop Entry]
+Type=Application
+Name=MyI3ConfigSettings
+Comment=Manage i3/sway keybindings, theme, input, and workspaces
+Exec=$BIN_DIR/myi3configsettings
+Icon=preferences-system
+Terminal=false
+Categories=Settings;System;
+StartupNotify=true
+EOF
+            echo "Desktop entry created at ~/.local/share/applications/myi3configsettings.desktop"
         else
             echo "Error: Binary not found in archive. Falling back to building from source."
             cd "$REPO_DIR"
@@ -391,6 +406,29 @@ else
     echo "  https://github.com/JGH0/MyI3ConfigSettings"
 fi
 
+# Add ~/.local/bin to PATH if not already (for fish shell)
+if [ -f "$HOME/.config/fish/config.fish" ]; then
+    if ! grep -q "$HOME/.local/bin" "$HOME/.config/fish/config.fish"; then
+        echo "Adding ~/.local/bin to fish PATH..."
+        echo "set -gx PATH \$HOME/.local/bin \$PATH" >> "$HOME/.config/fish/config.fish"
+    fi
+fi
+
+# For bash/zsh
+if [ -f "$HOME/.bashrc" ]; then
+    if ! grep -q "$HOME/.local/bin" "$HOME/.bashrc"; then
+        echo 'export PATH="$HOME/.local/bin:$PATH"' >> "$HOME/.bashrc"
+        echo "Added ~/.local/bin to bash PATH (restart shell or source ~/.bashrc)"
+    fi
+fi
+
+if [ -f "$HOME/.zshrc" ]; then
+    if ! grep -q "$HOME/.local/bin" "$HOME/.zshrc"; then
+        echo 'export PATH="$HOME/.local/bin:$PATH"' >> "$HOME/.zshrc"
+        echo "Added ~/.local/bin to zsh PATH (restart shell or source ~/.zshrc)"
+    fi
+fi
+
 # ----------------------------
 # Done
 # ----------------------------
@@ -404,3 +442,5 @@ else
 fi
 echo
 echo "The Tauri settings app (if installed) will manage your keybindings, theme, input, and workspaces."
+echo "You can launch it with: myi3configsettings"
+echo "It should also appear in your application launcher (rofi, dmenu, etc.)"
