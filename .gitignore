@@ -5,6 +5,8 @@ theme.json
 theme.conf
 input.json
 input.conf
+workspaces.json
+workspaces.conf
 
 # Generated scripts
 scripts/theme-startup.sh

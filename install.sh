@@ -87,6 +87,15 @@ generate_input_conf() {
             "input type:keyboard {",
             "    repeat_rate \(.keyboard.repeatRate)",
             "    repeat_delay \(.keyboard.repeatDelay)",
+            if .keyboard.xkbModel and .keyboard.xkbModel != "" then
+                "    xkb_model \(.keyboard.xkbModel)"
+            else empty end,
+            if .keyboard.xkbOptions and .keyboard.xkbOptions != "" then
+                "    xkb_options \(.keyboard.xkbOptions)"
+            else empty end,
+            if .keyboard.xkbNumlock then
+                "    xkb_numlock enabled"
+            else empty end,
             if .layouts | length > 0 then
                 "    xkb_layout " + (.layouts | map(.layout) | join(",")),
                 "    xkb_variant " + (.layouts | map(.variant // "") | join(","))
@@ -97,8 +106,29 @@ generate_input_conf() {
             "    pointer_accel \(.mouse.accelSpeed)",
             "    natural_scroll \(if .mouse.naturalScroll then "enabled" else "disabled" end)",
             "    tap \(if .mouse.tapToClick then "enabled" else "disabled" end)",
+            "    left_handed \(if .mouse.leftHanded then "enabled" else "disabled" end)",
+            "    dwt \(if .mouse.dwt then "enabled" else "disabled" end)",
+            "    scroll_method \(.mouse.scrollMethod)",
+            if .mouse.scrollMethod == "on_button_down" then
+                "    scroll_button \(.mouse.scrollButton)"
+            else empty end,
+            "    tap_button_map \(.mouse.tapButtonMap)",
+            "    drag_lock \(if .mouse.dragLock then "enabled" else "disabled" end)",
+            "    middle_emulation \(if .mouse.middleEmulation then "enabled" else "disabled" end)",
+            "    click_method \(.mouse.clickMethod)",
             "}"
         ' "$json_file"
+    } > "$conf_file"
+    echo "Generated $conf_file"
+}
+
+generate_workspaces_conf() {
+    local json_file="$CFG_ROOT/workspaces.json"
+    local conf_file="$CFG_ROOT/workspaces.conf"
+    [ ! -f "$json_file" ] && return
+    {
+        jq -r '.names | to_entries[] | select(.value != .key) | "workspace " + .key + " name \"" + .value + "\""' "$json_file"
+        jq -r '.assignments[] | "assign [class=\"" + .appClass + "\"] workspace " + (.workspace | tostring)' "$json_file"
     } > "$conf_file"
     echo "Generated $conf_file"
 }
@@ -204,14 +234,17 @@ cp -rn "$REPO_DIR/." "$CFG_ROOT" 2>/dev/null || true
     cp "$CFG_ROOT/default-theme.json" "$CFG_ROOT/theme.json"
 [ -f "$CFG_ROOT/default-input.json" ] && [ ! -f "$CFG_ROOT/input.json" ] && \
     cp "$CFG_ROOT/default-input.json" "$CFG_ROOT/input.json"
+[ -f "$CFG_ROOT/default-workspaces.json" ] && [ ! -f "$CFG_ROOT/workspaces.json" ] && \
+    cp "$CFG_ROOT/default-workspaces.json" "$CFG_ROOT/workspaces.json"
 
 # Generate .conf files
 generate_keybindings_conf
 generate_theme_conf
 generate_input_conf
+generate_workspaces_conf
 
 # Ensure include lines are in main config
-for f in keybindings theme input; do
+for f in keybindings theme input workspaces; do
     ensure_include_line "$f"
 done
 
@@ -250,30 +283,84 @@ else
 fi
 
 # ----------------------------
-# Optional: settings app
+# Optional: Install settings app (pre‑built)
 # ----------------------------
 echo
 echo "[Optional] Install the Tauri settings app (MyI3ConfigSettings)"
-if ask "Would you like to clone and build the settings app?"; then
-    git clone https://github.com/JGH0/MyI3ConfigSettings.git /tmp/MyI3ConfigSettings
-    cd /tmp/MyI3ConfigSettings
-    if npm install && cargo tauri build; then
-        BINARY_PATH=$(find src-tauri/target/release -maxdepth 1 -type f -executable \( -name "myi3configsettings" -o -name "MyI3ConfigSettings" \) | head -n1)
-        if [ -n "$BINARY_PATH" ]; then
-            BIN_DIR="$HOME/.local/bin"
-            mkdir -p "$BIN_DIR"
-            cp "$BINARY_PATH" "$BIN_DIR/"
-            echo "Installed to $BIN_DIR/$(basename "$BINARY_PATH")"
+if ask "Would you like to install the settings app?"; then
+    RELEASE_URL="https://github.com/JGH0/MyI3ConfigSettings/releases/download/v1.0.0/myi3configsettings-1.0.0.x86_64.rpm"
+    TEMP_DIR=$(mktemp -d)
+    cd "$TEMP_DIR"
+
+    echo "Downloading pre‑built RPM package..."
+    if wget -q "$RELEASE_URL" -O myi3configsettings.rpm; then
+        echo "Extracting binary from RPM..."
+        if command -v rpm2cpio &>/dev/null; then
+            # Extract using rpm2cpio
+            rpm2cpio myi3configsettings.rpm | cpio -idmv 2>/dev/null || true
+            # The binary is usually in ./usr/bin/ or similar
+            BIN_PATH=$(find . -type f -executable -name "myi3configsettings" 2>/dev/null | head -n1)
+            if [ -n "$BIN_PATH" ]; then
+                BIN_DIR="$HOME/.local/bin"
+                mkdir -p "$BIN_DIR"
+                cp "$BIN_PATH" "$BIN_DIR/"
+                echo "Installed to $BIN_DIR/myi3configsettings"
+            else
+                echo "Error: Could not find binary in RPM. Falling back to building from source."
+                cd "$REPO_DIR"
+                rm -rf "$TEMP_DIR"
+                # Fall back to source build
+                git clone https://github.com/JGH0/MyI3ConfigSettings.git /tmp/MyI3ConfigSettings
+                cd /tmp/MyI3ConfigSettings
+                if npm install && cargo tauri build; then
+                    BINARY_PATH=$(find src-tauri/target/release -maxdepth 1 -type f -executable \( -name "myi3configsettings" -o -name "MyI3ConfigSettings" \) | head -n1)
+                    if [ -n "$BINARY_PATH" ]; then
+                        BIN_DIR="$HOME/.local/bin"
+                        mkdir -p "$BIN_DIR"
+                        cp "$BINARY_PATH" "$BIN_DIR/"
+                        echo "Built and installed to $BIN_DIR/$(basename "$BINARY_PATH")"
+                    else
+                        echo "Error: Binary not found after build."
+                    fi
+                else
+                    echo "Build failed."
+                fi
+                cd - >/dev/null
+                rm -rf /tmp/MyI3ConfigSettings
+                return
+            fi
         else
-            echo "Error: Binary not found."
+            echo "rpm2cpio not found. Trying to install via package manager..."
+            if ask "rpm2cpio is required to extract the RPM. Install it now?"; then
+                sudo pacman -S --needed rpm-tools
+                # Retry extraction
+                rpm2cpio myi3configsettings.rpm | cpio -idmv 2>/dev/null || true
+                BIN_PATH=$(find . -type f -executable -name "myi3configsettings" 2>/dev/null | head -n1)
+                if [ -n "$BIN_PATH" ]; then
+                    BIN_DIR="$HOME/.local/bin"
+                    mkdir -p "$BIN_DIR"
+                    cp "$BIN_PATH" "$BIN_DIR/"
+                    echo "Installed to $BIN_DIR/myi3configsettings"
+                else
+                    echo "Extraction failed. Falling back to source build."
+                    # Fall back as above...
+                fi
+            else
+                echo "Cannot extract RPM. Falling back to source build."
+                # Fall back to source build
+            fi
         fi
     else
-        echo "Build failed. See above."
+        echo "Failed to download RPM. Falling back to building from source."
+        # Fall back to source build
     fi
+
     cd - >/dev/null
-    rm -rf /tmp/MyI3ConfigSettings
+    rm -rf "$TEMP_DIR"
 else
-    echo "Skipping. See https://github.com/JGH0/MyI3ConfigSettings"
+    echo "Skipping settings app installation."
+    echo "You can manually install it later from:"
+    echo "  https://github.com/JGH0/MyI3ConfigSettings"
 fi
 
 # ----------------------------
@@ -288,4 +375,4 @@ else
     echo "For i3, reload with: Super + Shift + C"
 fi
 echo
-echo "The Tauri settings app (if installed) will manage your keybindings, theme, and input."
+echo "The Tauri settings app (if installed) will manage your keybindings, theme, input, and workspaces."
