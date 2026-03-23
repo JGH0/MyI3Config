@@ -281,78 +281,73 @@ else
     ln -sf "$CFG_ROOT/i3/config" "$I3_DIR/config"
     echo "Linked: $I3_DIR/config → $CFG_ROOT/i3/config"
 fi
-
 # ----------------------------
 # Optional: Install settings app (pre‑built)
 # ----------------------------
 echo
 echo "[Optional] Install the Tauri settings app (MyI3ConfigSettings)"
 if ask "Would you like to install the settings app?"; then
-    RELEASE_URL="https://github.com/JGH0/MyI3ConfigSettings/releases/download/v1.0.0/myi3configsettings-1.0.0.x86_64.rpm"
+    RELEASE_URL="https://github.com/JGH0/MyI3ConfigSettings/releases/download/v1.0.0/myi3configsettings-1.0.0-x86_64.tar.gz"
     TEMP_DIR=$(mktemp -d)
     cd "$TEMP_DIR"
 
-    echo "Downloading pre‑built RPM package..."
-    if wget -q "$RELEASE_URL" -O myi3configsettings.rpm; then
-        echo "Extracting binary from RPM..."
-        if command -v rpm2cpio &>/dev/null; then
-            # Extract using rpm2cpio
-            rpm2cpio myi3configsettings.rpm | cpio -idmv 2>/dev/null || true
-            # The binary is usually in ./usr/bin/ or similar
-            BIN_PATH=$(find . -type f -executable -name "myi3configsettings" 2>/dev/null | head -n1)
-            if [ -n "$BIN_PATH" ]; then
-                BIN_DIR="$HOME/.local/bin"
-                mkdir -p "$BIN_DIR"
-                cp "$BIN_PATH" "$BIN_DIR/"
-                echo "Installed to $BIN_DIR/myi3configsettings"
-            else
-                echo "Error: Could not find binary in RPM. Falling back to building from source."
-                cd "$REPO_DIR"
-                rm -rf "$TEMP_DIR"
-                # Fall back to source build
-                git clone https://github.com/JGH0/MyI3ConfigSettings.git /tmp/MyI3ConfigSettings
-                cd /tmp/MyI3ConfigSettings
-                if npm install && cargo tauri build; then
-                    BINARY_PATH=$(find src-tauri/target/release -maxdepth 1 -type f -executable \( -name "myi3configsettings" -o -name "MyI3ConfigSettings" \) | head -n1)
-                    if [ -n "$BINARY_PATH" ]; then
-                        BIN_DIR="$HOME/.local/bin"
-                        mkdir -p "$BIN_DIR"
-                        cp "$BINARY_PATH" "$BIN_DIR/"
-                        echo "Built and installed to $BIN_DIR/$(basename "$BINARY_PATH")"
-                    else
-                        echo "Error: Binary not found after build."
-                    fi
-                else
-                    echo "Build failed."
-                fi
-                cd - >/dev/null
-                rm -rf /tmp/MyI3ConfigSettings
-                return
-            fi
+    echo "Downloading pre‑built binary..."
+    if wget -q "$RELEASE_URL" -O app.tar.gz; then
+        echo "Extracting..."
+        tar -xzf app.tar.gz
+        # The extracted file is `myi3configsettings`
+        if [ -f "myi3configsettings" ]; then
+            BIN_DIR="$HOME/.local/bin"
+            mkdir -p "$BIN_DIR"
+            cp "myi3configsettings" "$BIN_DIR/"
+            chmod +x "$BIN_DIR/myi3configsettings"
+            echo "Installed to $BIN_DIR/myi3configsettings"
         else
-            echo "rpm2cpio not found. Trying to install via package manager..."
-            if ask "rpm2cpio is required to extract the RPM. Install it now?"; then
-                sudo pacman -S --needed rpm-tools
-                # Retry extraction
-                rpm2cpio myi3configsettings.rpm | cpio -idmv 2>/dev/null || true
-                BIN_PATH=$(find . -type f -executable -name "myi3configsettings" 2>/dev/null | head -n1)
-                if [ -n "$BIN_PATH" ]; then
+            echo "Error: Binary not found in archive. Falling back to building from source."
+            cd "$REPO_DIR"
+            rm -rf "$TEMP_DIR"
+            # Fall back to source build
+            git clone https://github.com/JGH0/MyI3ConfigSettings.git /tmp/MyI3ConfigSettings
+            cd /tmp/MyI3ConfigSettings
+            if npm install && cargo tauri build; then
+                BINARY_PATH=$(find src-tauri/target/release -maxdepth 1 -type f -executable \( -name "myi3configsettings" -o -name "MyI3ConfigSettings" \) | head -n1)
+                if [ -n "$BINARY_PATH" ]; then
                     BIN_DIR="$HOME/.local/bin"
                     mkdir -p "$BIN_DIR"
-                    cp "$BIN_PATH" "$BIN_DIR/"
-                    echo "Installed to $BIN_DIR/myi3configsettings"
+                    cp "$BINARY_PATH" "$BIN_DIR/"
+                    echo "Built and installed to $BIN_DIR/$(basename "$BINARY_PATH")"
                 else
-                    echo "Extraction failed. Falling back to source build."
-                    # Fall back as above...
+                    echo "Error: Binary not found after build."
                 fi
             else
-                echo "Cannot extract RPM. Falling back to source build."
-                # Fall back to source build
+                echo "Build failed."
             fi
+            cd - >/dev/null
+            rm -rf /tmp/MyI3ConfigSettings
+            return
         fi
     else
-        echo "Failed to download RPM. Falling back to building from source."
-        # Fall back to source build
+        echo "Failed to download pre‑built binary. Falling back to building from source."
+        cd "$REPO_DIR"
+        rm -rf "$TEMP_DIR"
+        # Fall back to source build (same as above)
+        git clone https://github.com/JGH0/MyI3ConfigSettings.git /tmp/MyI3ConfigSettings
+        cd /tmp/MyI3ConfigSettings
+        if npm install && cargo tauri build; then
+            BINARY_PATH=$(find src-tauri/target/release -maxdepth 1 -type f -executable \( -name "myi3configsettings" -o -name "MyI3ConfigSettings" \) | head -n1)
+            if [ -n "$BINARY_PATH" ]; then
+                BIN_DIR="$HOME/.local/bin"
+                mkdir -p "$BIN_DIR"
+                cp "$BINARY_PATH" "$BIN_DIR/"
+                echo "Built and installed to $BIN_DIR/$(basename "$BINARY_PATH")"
+            else
+                echo "Error: Binary not found after build."
+            fi
+        else
+            echo "Build failed."
+        fi
+        cd - >/dev/null
+        rm -rf /tmp/MyI3ConfigSettings
     fi
 
     cd - >/dev/null
