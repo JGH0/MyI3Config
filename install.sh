@@ -22,11 +22,41 @@ is_sway() {
     [ -n "$SWAYSOCK" ] || pgrep -x sway >/dev/null 2>&1
 }
 
+# Detect package manager and install packages
+install_packages() {
+    local packages="$1"
+    if [ -z "$packages" ]; then
+        return
+    fi
+
+    if command -v pacman &>/dev/null; then
+        echo "  Installing with pacman..."
+        sudo pacman -S --needed $packages || echo "  Some packages failed. Continuing..."
+    elif command -v apt-get &>/dev/null; then
+        echo "  Installing with apt..."
+        sudo apt-get update
+        sudo apt-get install -y $packages || echo "  Some packages failed. Continuing..."
+    elif command -v dnf &>/dev/null; then
+        echo "  Installing with dnf..."
+        sudo dnf install -y $packages || echo "  Some packages failed. Continuing..."
+    elif command -v zypper &>/dev/null; then
+        echo "  Installing with zypper..."
+        sudo zypper install -y $packages || echo "  Some packages failed. Continuing..."
+    elif command -v yum &>/dev/null; then
+        echo "  Installing with yum..."
+        sudo yum install -y $packages || echo "  Some packages failed. Continuing..."
+    else
+        echo "  No supported package manager found. Please install the following packages manually:"
+        echo "  $packages"
+        echo "  Continuing anyway..."
+    fi
+}
+
 check_jq() {
     if ! command -v jq &>/dev/null; then
         echo "Error: jq is required but not installed."
         if ask "Would you like to install jq now?"; then
-            sudo pacman -S --needed jq
+            install_packages "jq"
         else
             echo "Please install jq manually and re-run the installer."
             exit 1
@@ -214,7 +244,9 @@ fi
 if [ -n "$PACKAGES" ]; then
     UNIQUE_PACKAGES=$(echo "$PACKAGES" | tr ' ' '\n' | sort -u | tr '\n' ' ')
     echo "  Installing: $UNIQUE_PACKAGES"
-    sudo pacman -S --needed $UNIQUE_PACKAGES || echo "  Some packages failed. Continuing..."
+    install_packages "$UNIQUE_PACKAGES"
+else
+    echo "  No packages to install."
 fi
 
 check_jq
@@ -281,6 +313,7 @@ else
     ln -sf "$CFG_ROOT/i3/config" "$I3_DIR/config"
     echo "Linked: $I3_DIR/config → $CFG_ROOT/i3/config"
 fi
+
 # ----------------------------
 # Optional: Install settings app (pre‑built)
 # ----------------------------
