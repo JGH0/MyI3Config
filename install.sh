@@ -324,21 +324,37 @@ if ask "Would you like to install the settings app?"; then
     TEMP_DIR=$(mktemp -d)
     cd "$TEMP_DIR"
 
-    echo "Downloading pre‑built binary..."
-    if wget -q "$RELEASE_URL" -O app.tar.gz; then
-        echo "Extracting..."
-        tar -xzf app.tar.gz
-        if [ -f "myi3configsettings" ]; then
-            BIN_DIR="$HOME/.local/bin"
-            mkdir -p "$BIN_DIR"
-            cp "myi3configsettings" "$BIN_DIR/"
-            chmod +x "$BIN_DIR/myi3configsettings"
-            echo "Installed to $BIN_DIR/myi3configsettings"
+    # Use wget or curl
+    DOWNLOAD_CMD=""
+    if command -v wget &>/dev/null; then
+        DOWNLOAD_CMD="wget -q"
+    elif command -v curl &>/dev/null; then
+        DOWNLOAD_CMD="curl -L -o"
+    else
+        echo "Error: Neither wget nor curl is installed. Cannot download."
+        cd - >/dev/null
+        rm -rf "$TEMP_DIR"
+        echo "Skipping settings app installation."
+    fi
 
-            # Create desktop entry so it appears in rofi/application menus
-            echo "Creating desktop entry..."
-            mkdir -p "$HOME/.local/share/applications"
-            cat > "$HOME/.local/share/applications/myi3configsettings.desktop" <<EOF
+    if [ -n "$DOWNLOAD_CMD" ]; then
+        echo "Downloading pre-built binary..."
+        if $DOWNLOAD_CMD app.tar.gz "$RELEASE_URL"; then
+            echo "Extracting..."
+            tar -xzf app.tar.gz
+            # Look for the binary anywhere under the current directory
+            BIN_PATH=$(find . -type f -executable -name "myi3configsettings" | head -n1)
+            if [ -n "$BIN_PATH" ]; then
+                BIN_DIR="$HOME/.local/bin"
+                mkdir -p "$BIN_DIR"
+                cp "$BIN_PATH" "$BIN_DIR/"
+                chmod +x "$BIN_DIR/myi3configsettings"
+                echo "Installed to $BIN_DIR/myi3configsettings"
+
+                # Create desktop entry
+                echo "Creating desktop entry..."
+                mkdir -p "$HOME/.local/share/applications"
+                cat > "$HOME/.local/share/applications/myi3configsettings.desktop" <<EOF
 [Desktop Entry]
 Type=Application
 Name=MyI3ConfigSettings
@@ -349,12 +365,34 @@ Terminal=false
 Categories=Settings;System;
 StartupNotify=true
 EOF
-            echo "Desktop entry created at ~/.local/share/applications/myi3configsettings.desktop"
+                echo "Desktop entry created at ~/.local/share/applications/myi3configsettings.desktop"
+            else
+                echo "Error: Binary not found in extracted archive."
+                echo "Falling back to building from source (requires npm and cargo)."
+                cd "$REPO_DIR"
+                rm -rf "$TEMP_DIR"
+                git clone https://github.com/JGH0/MyI3ConfigSettings.git /tmp/MyI3ConfigSettings
+                cd /tmp/MyI3ConfigSettings
+                if npm install && cargo tauri build; then
+                    BINARY_PATH=$(find src-tauri/target/release -maxdepth 1 -type f -executable \( -name "myi3configsettings" -o -name "MyI3ConfigSettings" \) | head -n1)
+                    if [ -n "$BINARY_PATH" ]; then
+                        BIN_DIR="$HOME/.local/bin"
+                        mkdir -p "$BIN_DIR"
+                        cp "$BINARY_PATH" "$BIN_DIR/"
+                        echo "Built and installed to $BIN_DIR/$(basename "$BINARY_PATH")"
+                    else
+                        echo "Error: Binary not found after build."
+                    fi
+                else
+                    echo "Build failed. Please install npm and cargo or download the binary manually."
+                fi
+                cd - >/dev/null
+                rm -rf /tmp/MyI3ConfigSettings
+            fi
         else
-            echo "Error: Binary not found in archive. Falling back to building from source."
+            echo "Failed to download pre-built binary. Falling back to building from source (requires npm and cargo)."
             cd "$REPO_DIR"
             rm -rf "$TEMP_DIR"
-            # Fall back to source build
             git clone https://github.com/JGH0/MyI3ConfigSettings.git /tmp/MyI3ConfigSettings
             cd /tmp/MyI3ConfigSettings
             if npm install && cargo tauri build; then
@@ -368,34 +406,11 @@ EOF
                     echo "Error: Binary not found after build."
                 fi
             else
-                echo "Build failed."
+                echo "Build failed. Please install npm and cargo or download the binary manually."
             fi
             cd - >/dev/null
             rm -rf /tmp/MyI3ConfigSettings
-            return
         fi
-    else
-        echo "Failed to download pre‑built binary. Falling back to building from source."
-        cd "$REPO_DIR"
-        rm -rf "$TEMP_DIR"
-        # Fall back to source build (same as above)
-        git clone https://github.com/JGH0/MyI3ConfigSettings.git /tmp/MyI3ConfigSettings
-        cd /tmp/MyI3ConfigSettings
-        if npm install && cargo tauri build; then
-            BINARY_PATH=$(find src-tauri/target/release -maxdepth 1 -type f -executable \( -name "myi3configsettings" -o -name "MyI3ConfigSettings" \) | head -n1)
-            if [ -n "$BINARY_PATH" ]; then
-                BIN_DIR="$HOME/.local/bin"
-                mkdir -p "$BIN_DIR"
-                cp "$BINARY_PATH" "$BIN_DIR/"
-                echo "Built and installed to $BIN_DIR/$(basename "$BINARY_PATH")"
-            else
-                echo "Error: Binary not found after build."
-            fi
-        else
-            echo "Build failed."
-        fi
-        cd - >/dev/null
-        rm -rf /tmp/MyI3ConfigSettings
     fi
 
     cd - >/dev/null
@@ -444,3 +459,11 @@ echo
 echo "The Tauri settings app (if installed) will manage your keybindings, theme, input, and workspaces."
 echo "You can launch it with: myi3configsettings"
 echo "It should also appear in your application launcher (rofi, dmenu, etc.)"
+
+# Optional: if keybindings.json is corrupted, suggest fix
+if grep -q "not found" "$CFG_ROOT/keybindings.json" 2>/dev/null; then
+    echo
+    echo "Note: Your keybindings.json appears to be corrupted (contains error messages)."
+    echo "To fix it, run: cp $CFG_ROOT/default-keybindings.json $CFG_ROOT/keybindings.json"
+    echo "Then re-run the installer or manually regenerate the .conf files."
+fi
