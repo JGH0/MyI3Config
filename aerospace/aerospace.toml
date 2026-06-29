@@ -1,0 +1,159 @@
+# ========================================
+# AeroSpace Configuration (macOS)
+# Mirrors the MyI3Config i3/sway setup
+# ========================================
+#
+# Place this file at ~/.aerospace.toml
+# See: https://nikitabobko.github.io/AeroSpace/guide
+
+config-version = 2
+
+# Start at login
+start-at-login = true
+
+# Normalizations
+enable-normalization-flatten-containers = true
+enable-normalization-opposite-orientation-for-nested-containers = true
+
+# Layout
+default-root-container-layout = 'tiles'
+default-root-container-orientation = 'auto'
+accordion-padding = 30
+
+# Gaps (same defaults as i3/sway config: 0)
+[gaps]
+inner.horizontal = 0
+inner.vertical = 0
+outer.left = 0
+outer.bottom = 0
+outer.top = 0
+outer.right = 0
+
+# Mouse follows focus when monitor changes
+on-focused-monitor-changed = ['move-mouse monitor-lazy-center']
+
+# Don't hide macOS apps when cmd-h is pressed (matches i3 behavior)
+automatically-unhide-macos-hidden-apps = true
+
+# Persistent workspaces (keep empty ones alive)
+persistent-workspaces = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10"]
+
+# Keyboard layout
+[key-mapping]
+preset = 'qwerty'
+
+# ========================================
+# Main mode keybindings
+# ========================================
+# Uses cmd (⌘) as the primary modifier, matching $mod/Mod4 on i3/sway
+
+[mode.main.binding]
+
+# --- Applications ---
+# Terminal (replace with your preferred terminal path)
+cmd-return = 'exec-and-forget open -n -a /Applications/Kitty.app'
+
+# Browser
+cmd-b = 'exec-and-forget open -a /Applications/Firefox.app'
+
+# File manager (Finder)
+cmd-e = 'exec-and-forget open -a /Applications/Finder.app'
+
+# Calculator
+ctrl-cmd-c = 'exec-and-forget open -a /System/Applications/Calculator.app'
+
+# App launcher (Spotlight equivalent — or replace with Raycast/LaunchBar path)
+ctrl-cmd-return = 'exec-and-forget open -a /System/Applications/Spotlight.app'
+
+# Kill focused app (like i3's $mod+q → kill)
+cmd-q = 'close'
+
+# Fullscreen toggle
+cmd-f = 'fullscreen'
+
+# Floating toggle (cycle through floating → tiling)
+cmd-t = 'layout floating tiling'
+
+# Split toggle (cycle through tiling layouts — like i3's $mod+j → split toggle)
+cmd-j = 'layout tiles horizontal vertical accordion'
+
+# --- Window Focus (arrow keys + Vim-like) ---
+cmd-left = 'focus left'
+cmd-down = 'focus down'
+cmd-up = 'focus up'
+cmd-right = 'focus right'
+
+# --- Move Window ---
+ctrl-cmd-left = 'move left'
+ctrl-cmd-down = 'move down'
+ctrl-cmd-up = 'move up'
+ctrl-cmd-right = 'move right'
+
+# --- Resize ---
+shift-cmd-left = 'resize width -50'
+shift-cmd-down = 'resize height +50'
+shift-cmd-up = 'resize height -50'
+shift-cmd-right = 'resize width +50'
+
+# --- Workspace Switching ---
+cmd-1 = 'workspace 1'
+cmd-2 = 'workspace 2'
+cmd-3 = 'workspace 3'
+cmd-4 = 'workspace 4'
+cmd-5 = 'workspace 5'
+cmd-6 = 'workspace 6'
+cmd-7 = 'workspace 7'
+cmd-8 = 'workspace 8'
+cmd-9 = 'workspace 9'
+cmd-0 = 'workspace 10'
+
+# --- Move Window to Workspace ---
+shift-cmd-1 = 'move-node-to-workspace 1'
+shift-cmd-2 = 'move-node-to-workspace 2'
+shift-cmd-3 = 'move-node-to-workspace 3'
+shift-cmd-4 = 'move-node-to-workspace 4'
+shift-cmd-5 = 'move-node-to-workspace 5'
+shift-cmd-6 = 'move-node-to-workspace 6'
+shift-cmd-7 = 'move-node-to-workspace 7'
+shift-cmd-8 = 'move-node-to-workspace 8'
+shift-cmd-9 = 'move-node-to-workspace 9'
+shift-cmd-0 = 'move-node-to-workspace 10'
+
+# --- Utilities ---
+# Screenshot (using macOS built-in screencapture)
+shift-cmd-s = 'exec-and-forget ~/.config/MyI3Config/scripts-aerospace/screenshot.sh'
+
+# Display arrangement tool
+cmd-p = 'exec-and-forget ~/.config/MyI3Config/scripts-aerospace/display-tool.sh'
+
+# Lock screen
+cmd-l = 'exec-and-forget ~/.config/MyI3Config/scripts-aerospace/lock.sh'
+
+# Reload AeroSpace config
+shift-cmd-r = 'reload-config'
+
+# Keyboard layout toggle (like i3 $mod+space)
+cmd-space = 'exec-and-forget ~/.config/MyI3Config/scripts-aerospace/cycle-layout.sh'
+
+# Workspace back-and-forth
+cmd-tab = 'workspace-back-and-forth'
+
+# Move workspace to next monitor
+shift-cmd-tab = 'move-workspace-to-monitor --wrap-around next'
+
+# Enter service mode for advanced operations
+shift-semicolon = 'mode service'
+
+# --- Media Keys (Fn keys are handled by macOS) ---
+# Default macOS media keys should work out of the box for brightness/sound/media.
+# If not, map XF86 equivalents to osascript or skhd.
+
+# ========================================
+# Service mode keybindings
+# ========================================
+[mode.service.binding]
+esc = ['reload-config', 'mode main']              # Back to normal
+r = ['flatten-workspace-tree', 'mode main']       # Reset layout
+f = ['layout floating tiling', 'mode main']       # Toggle floating/tiling
+backspace = ['close-all-windows-but-current', 'mode main']  # Close all but current
+shift-r = ['reload-config', 'mode main']           # Force reload

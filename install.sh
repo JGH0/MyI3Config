@@ -29,6 +29,35 @@ install_packages() {
         return
     fi
 
+    if [ "$WM" = "aerospace" ]; then
+        # macOS — use Homebrew
+        if command -v brew &>/dev/null; then
+            echo "  Installing with Homebrew..."
+            # Filter out AeroSpace cask (installed separately below)
+            local brew_pkgs=""
+            for pkg in $packages; do
+                if [ "$pkg" != "aerospace" ]; then
+                    brew_pkgs="$brew_pkgs $pkg"
+                fi
+            done
+            if [ -n "$brew_pkgs" ]; then
+                brew install $brew_pkgs || echo "  Some packages failed. Continuing..."
+            fi
+            # Install AeroSpace cask if not already installed
+            if ! brew list --cask nikitabobko/tap/aerospace &>/dev/null 2>&1; then
+                echo "  Installing AeroSpace via Homebrew cask..."
+                brew install --cask nikitabobko/tap/aerospace || echo "  AeroSpace installation failed. Continuing..."
+            else
+                echo "  AeroSpace already installed."
+            fi
+        else
+            echo "  Homebrew not found. Please install packages manually:"
+            echo "  $packages"
+            echo "  Then install AeroSpace: brew install --cask nikitabobko/tap/aerospace"
+        fi
+        return
+    fi
+
     if command -v pacman &>/dev/null; then
         echo "  Installing with pacman..."
         sudo pacman -S --needed $packages || echo "  Some packages failed. Continuing..."
@@ -184,17 +213,22 @@ ensure_include_line() {
 echo "=== MyI3Config installer ==="
 echo
 
-echo "Select window manager:"
-echo "1) i3 (X11)"
-echo "2) Sway (Wayland)"
-echo "3) Auto-detect"
-read -rp "Choice (1/2/3): " wm_choice
+echo "Select target:"
+echo "1) i3 (Linux / X11)"
+echo "2) Sway (Linux / Wayland)"
+echo "3) AeroSpace (macOS)"
+echo "4) Auto-detect"
+read -rp "Choice (1/2/3/4): " wm_choice
 
 case "$wm_choice" in
     1) WM="i3" ;;
     2) WM="sway" ;;
-    3)
-        if is_sway; then
+    3) WM="aerospace" ;;
+    4)
+        if [ "$(uname)" = "Darwin" ]; then
+            WM="aerospace"
+            echo "Auto-detected: macOS — AeroSpace"
+        elif is_sway; then
             WM="sway"
             echo "Auto-detected: Sway"
         else
@@ -227,7 +261,9 @@ echo
 echo "[1/3] Installing packages..."
 
 PACKAGES=""
-if [ -f "$REPO_DIR/packages-common.txt" ]; then
+if [ "$WM" = "aerospace" ] && [ -f "$REPO_DIR/packages-aerospace.txt" ]; then
+    PACKAGES=$(grep -v '^#' "$REPO_DIR/packages-aerospace.txt" | grep -v '^$' | tr '\n' ' ')
+elif [ -f "$REPO_DIR/packages-common.txt" ]; then
     COMMON_PACKAGES=$(grep -v '^#' "$REPO_DIR/packages-common.txt" | tr '\n' ' ')
     PACKAGES="$PACKAGES $COMMON_PACKAGES"
     if [ "$WM" = "sway" ] && [ -f "$REPO_DIR/packages-sway.txt" ]; then
@@ -249,7 +285,9 @@ else
     echo "  No packages to install."
 fi
 
-check_jq
+if [ "$WM" != "aerospace" ]; then
+    check_jq
+fi
 
 # ----------------------------
 # 2/3: Copy configuration files
@@ -259,33 +297,54 @@ echo "[2/3] Installing MyI3Config..."
 
 cp -rn "$REPO_DIR/." "$CFG_ROOT" 2>/dev/null || true
 
-# Create default JSONs if missing
-[ -f "$CFG_ROOT/default-keybindings.json" ] && [ ! -f "$CFG_ROOT/keybindings.json" ] && \
-    cp "$CFG_ROOT/default-keybindings.json" "$CFG_ROOT/keybindings.json"
-[ -f "$CFG_ROOT/default-theme.json" ] && [ ! -f "$CFG_ROOT/theme.json" ] && \
-    cp "$CFG_ROOT/default-theme.json" "$CFG_ROOT/theme.json"
-[ -f "$CFG_ROOT/default-input.json" ] && [ ! -f "$CFG_ROOT/input.json" ] && \
-    cp "$CFG_ROOT/default-input.json" "$CFG_ROOT/input.json"
-[ -f "$CFG_ROOT/default-workspaces.json" ] && [ ! -f "$CFG_ROOT/workspaces.json" ] && \
-    cp "$CFG_ROOT/default-workspaces.json" "$CFG_ROOT/workspaces.json"
+if [ "$WM" = "aerospace" ]; then
+    # ---- AeroSpace (macOS) installation ----
 
-# Generate .conf files
-generate_keybindings_conf
-generate_theme_conf
-generate_input_conf
-generate_workspaces_conf
+    # Install AeroSpace config to ~/.aerospace.toml
+    if [ -f "$CFG_ROOT/aerospace/aerospace.toml" ]; then
+        cp "$CFG_ROOT/aerospace/aerospace.toml" "$HOME/.aerospace.toml"
+        echo "Installed: $HOME/.aerospace.toml"
+    fi
 
-# Ensure include lines are in main config
-for f in keybindings theme input workspaces; do
-    ensure_include_line "$f"
-done
+    # Make macOS scripts executable
+    find "$CFG_ROOT/scripts-aerospace" -type f -name "*.sh" -exec chmod +x {} \; 2>/dev/null || true
 
-# Make scripts executable
-find "$CFG_ROOT/scripts" -type f -name "*.sh" -exec chmod +x {} \;
+    echo
+    echo "AeroSpace configuration installed!"
+    echo "Install AeroSpace: brew install --cask nikitabobko/tap/aerospace"
+    echo
+    echo "To apply changes, reload AeroSpace with:"
+    echo "  aerospace reload-config"
+else
+    # ---- i3/Sway installation ----
 
-# Default lock.sh if missing
-if [ ! -f "$CFG_ROOT/scripts/lock.sh" ]; then
-    cat > "$CFG_ROOT/scripts/lock.sh" <<'EOF'
+    # Create default JSONs if missing
+    [ -f "$CFG_ROOT/default-keybindings.json" ] && [ ! -f "$CFG_ROOT/keybindings.json" ] && \
+        cp "$CFG_ROOT/default-keybindings.json" "$CFG_ROOT/keybindings.json"
+    [ -f "$CFG_ROOT/default-theme.json" ] && [ ! -f "$CFG_ROOT/theme.json" ] && \
+        cp "$CFG_ROOT/default-theme.json" "$CFG_ROOT/theme.json"
+    [ -f "$CFG_ROOT/default-input.json" ] && [ ! -f "$CFG_ROOT/input.json" ] && \
+        cp "$CFG_ROOT/default-input.json" "$CFG_ROOT/input.json"
+    [ -f "$CFG_ROOT/default-workspaces.json" ] && [ ! -f "$CFG_ROOT/workspaces.json" ] && \
+        cp "$CFG_ROOT/default-workspaces.json" "$CFG_ROOT/workspaces.json"
+
+    # Generate .conf files
+    generate_keybindings_conf
+    generate_theme_conf
+    generate_input_conf
+    generate_workspaces_conf
+
+    # Ensure include lines are in main config
+    for f in keybindings theme input workspaces; do
+        ensure_include_line "$f"
+    done
+
+    # Make scripts executable
+    find "$CFG_ROOT/scripts" -type f -name "*.sh" -exec chmod +x {} \;
+
+    # Default lock.sh if missing
+    if [ ! -f "$CFG_ROOT/scripts/lock.sh" ]; then
+        cat > "$CFG_ROOT/scripts/lock.sh" <<'EOF'
 #!/bin/bash
 if [ -n "$SWAYSOCK" ]; then
     swaylock
@@ -293,68 +352,70 @@ else
     i3lock
 fi
 EOF
-    chmod +x "$CFG_ROOT/scripts/lock.sh"
-fi
+        chmod +x "$CFG_ROOT/scripts/lock.sh"
+    fi
 
-# ----------------------------
-# 3/3: Symlink config
-# ----------------------------
-echo
-echo "Linking config..."
+    # ----------------------------
+    # 3/3: Symlink config
+    # ----------------------------
+    echo
+    echo "Linking config..."
 
-if [ "$WM" = "sway" ]; then
-    SWAY_DIR="$HOME/.config/sway"
-    mkdir -p "$SWAY_DIR"
-    ln -sf "$CFG_ROOT/i3/config" "$SWAY_DIR/config"
-    echo "Linked: $SWAY_DIR/config → $CFG_ROOT/i3/config"
-else
-    I3_DIR="$HOME/.config/i3"
-    mkdir -p "$I3_DIR"
-    ln -sf "$CFG_ROOT/i3/config" "$I3_DIR/config"
-    echo "Linked: $I3_DIR/config → $CFG_ROOT/i3/config"
+    if [ "$WM" = "sway" ]; then
+        SWAY_DIR="$HOME/.config/sway"
+        mkdir -p "$SWAY_DIR"
+        ln -sf "$CFG_ROOT/i3/config" "$SWAY_DIR/config"
+        echo "Linked: $SWAY_DIR/config → $CFG_ROOT/i3/config"
+    else
+        I3_DIR="$HOME/.config/i3"
+        mkdir -p "$I3_DIR"
+        ln -sf "$CFG_ROOT/i3/config" "$I3_DIR/config"
+        echo "Linked: $I3_DIR/config → $CFG_ROOT/i3/config"
+    fi
 fi
 
 # ----------------------------
 # Optional: Install settings app (pre‑built)
 # ----------------------------
-echo
-echo "[Optional] Install the Tauri settings app (MyI3ConfigSettings)"
-if ask "Would you like to install the settings app?"; then
-    RELEASE_URL="https://github.com/JGH0/MyI3ConfigSettings/releases/download/v1.0.0/myi3configsettings-1.0.0-x86_64.tar.gz"
-    TEMP_DIR=$(mktemp -d)
-    cd "$TEMP_DIR"
+if [ "$WM" != "aerospace" ]; then
+    echo
+    echo "[Optional] Install the Tauri settings app (MyI3ConfigSettings)"
+    if ask "Would you like to install the settings app?"; then
+        RELEASE_URL="https://github.com/JGH0/MyI3ConfigSettings/releases/download/v1.0.0/myi3configsettings-1.0.0-x86_64.tar.gz"
+        TEMP_DIR=$(mktemp -d)
+        cd "$TEMP_DIR"
 
-    # Use wget or curl
-    DOWNLOAD_CMD=""
-    if command -v wget &>/dev/null; then
-        DOWNLOAD_CMD="wget -q"
-    elif command -v curl &>/dev/null; then
-        DOWNLOAD_CMD="curl -L -o"
-    else
-        echo "Error: Neither wget nor curl is installed. Cannot download."
-        cd - >/dev/null
-        rm -rf "$TEMP_DIR"
-        echo "Skipping settings app installation."
-    fi
+        # Use wget or curl
+        DOWNLOAD_CMD=""
+        if command -v wget &>/dev/null; then
+            DOWNLOAD_CMD="wget -q"
+        elif command -v curl &>/dev/null; then
+            DOWNLOAD_CMD="curl -L -o"
+        else
+            echo "Error: Neither wget nor curl is installed. Cannot download."
+            cd "$REPO_DIR"
+            rm -rf "$TEMP_DIR"
+            echo "Skipping settings app installation."
+        fi
 
-    if [ -n "$DOWNLOAD_CMD" ]; then
-        echo "Downloading pre-built binary..."
-        if $DOWNLOAD_CMD app.tar.gz "$RELEASE_URL"; then
-            echo "Extracting..."
-            tar -xzf app.tar.gz
-            # Look for the binary anywhere under the current directory
-            BIN_PATH=$(find . -type f -executable -name "myi3configsettings" | head -n1)
-            if [ -n "$BIN_PATH" ]; then
-                BIN_DIR="$HOME/.local/bin"
-                mkdir -p "$BIN_DIR"
-                cp "$BIN_PATH" "$BIN_DIR/"
-                chmod +x "$BIN_DIR/myi3configsettings"
-                echo "Installed to $BIN_DIR/myi3configsettings"
+        if [ -n "$DOWNLOAD_CMD" ]; then
+            echo "Downloading pre‑built binary..."
+            if $DOWNLOAD_CMD app.tar.gz "$RELEASE_URL"; then
+                echo "Extracting..."
+                tar -xzf app.tar.gz
+                # Find the binary in the extracted tree
+                BIN_PATH=$(find . -type f -executable -name "myi3configsettings" | head -n1)
+                if [ -n "$BIN_PATH" ]; then
+                    BIN_DIR="$HOME/.local/bin"
+                    mkdir -p "$BIN_DIR"
+                    cp "$BIN_PATH" "$BIN_DIR/"
+                    chmod +x "$BIN_DIR/myi3configsettings"
+                    echo "Installed to $BIN_DIR/myi3configsettings"
 
-                # Create desktop entry
-                echo "Creating desktop entry..."
-                mkdir -p "$HOME/.local/share/applications"
-                cat > "$HOME/.local/share/applications/myi3configsettings.desktop" <<EOF
+                    # Create desktop entry
+                    echo "Creating desktop entry..."
+                    mkdir -p "$HOME/.local/share/applications"
+                    cat > "$HOME/.local/share/applications/myi3configsettings.desktop" <<EOF
 [Desktop Entry]
 Type=Application
 Name=MyI3ConfigSettings
@@ -365,60 +426,73 @@ Terminal=false
 Categories=Settings;System;
 StartupNotify=true
 EOF
-                echo "Desktop entry created at ~/.local/share/applications/myi3configsettings.desktop"
+                    echo "Desktop entry created."
+                    cd "$REPO_DIR"
+                    rm -rf "$TEMP_DIR"
+                else
+                    echo "Binary not found in archive. Falling back to building from source."
+                    cd "$REPO_DIR"
+                    rm -rf "$TEMP_DIR"
+                    # Build from source
+                    BUILD_DIR="/tmp/MyI3ConfigSettings"
+                    rm -rf "$BUILD_DIR"
+                    git clone https://github.com/JGH0/MyI3ConfigSettings.git "$BUILD_DIR"
+                    cd "$BUILD_DIR"
+                    if command -v npm &>/dev/null && command -v cargo &>/dev/null; then
+                        if npm install && cargo tauri build; then
+                            BINARY_PATH=$(find src-tauri/target/release -maxdepth 1 -type f -executable -name "myi3configsettings" | head -n1)
+                            if [ -n "$BINARY_PATH" ]; then
+                                BIN_DIR="$HOME/.local/bin"
+                                mkdir -p "$BIN_DIR"
+                                cp "$BINARY_PATH" "$BIN_DIR/"
+                                echo "Built and installed to $BIN_DIR/myi3configsettings"
+                            else
+                                echo "Error: Binary not found after build."
+                            fi
+                        else
+                            echo "Build failed. Please install npm and cargo or download the binary manually."
+                        fi
+                    else
+                        echo "npm or cargo not found. Cannot build from source."
+                    fi
+                    cd "$REPO_DIR"
+                    rm -rf "$BUILD_DIR"
+                fi
             else
-                echo "Error: Binary not found in extracted archive."
-                echo "Falling back to building from source (requires npm and cargo)."
+                echo "Failed to download pre-built binary. Falling back to building from source."
                 cd "$REPO_DIR"
                 rm -rf "$TEMP_DIR"
-                git clone https://github.com/JGH0/MyI3ConfigSettings.git /tmp/MyI3ConfigSettings
-                cd /tmp/MyI3ConfigSettings
-                if npm install && cargo tauri build; then
-                    BINARY_PATH=$(find src-tauri/target/release -maxdepth 1 -type f -executable \( -name "myi3configsettings" -o -name "MyI3ConfigSettings" \) | head -n1)
-                    if [ -n "$BINARY_PATH" ]; then
-                        BIN_DIR="$HOME/.local/bin"
-                        mkdir -p "$BIN_DIR"
-                        cp "$BINARY_PATH" "$BIN_DIR/"
-                        echo "Built and installed to $BIN_DIR/$(basename "$BINARY_PATH")"
+                # Build from source (same as above)
+                BUILD_DIR="/tmp/MyI3ConfigSettings"
+                rm -rf "$BUILD_DIR"
+                git clone https://github.com/JGH0/MyI3ConfigSettings.git "$BUILD_DIR"
+                cd "$BUILD_DIR"
+                if command -v npm &>/dev/null && command -v cargo &>/dev/null; then
+                    if npm install && cargo tauri build; then
+                        BINARY_PATH=$(find src-tauri/target/release -maxdepth 1 -type f -executable -name "myi3configsettings" | head -n1)
+                        if [ -n "$BINARY_PATH" ]; then
+                            BIN_DIR="$HOME/.local/bin"
+                            mkdir -p "$BIN_DIR"
+                            cp "$BINARY_PATH" "$BIN_DIR/"
+                            echo "Built and installed to $BIN_DIR/myi3configsettings"
+                        else
+                            echo "Error: Binary not found after build."
+                        fi
                     else
-                        echo "Error: Binary not found after build."
+                        echo "Build failed. Please install npm and cargo or download the binary manually."
                     fi
                 else
-                    echo "Build failed. Please install npm and cargo or download the binary manually."
+                    echo "npm or cargo not found. Cannot build from source."
                 fi
-                cd - >/dev/null
-                rm -rf /tmp/MyI3ConfigSettings
+                cd "$REPO_DIR"
+                rm -rf "$BUILD_DIR"
             fi
-        else
-            echo "Failed to download pre-built binary. Falling back to building from source (requires npm and cargo)."
-            cd "$REPO_DIR"
-            rm -rf "$TEMP_DIR"
-            git clone https://github.com/JGH0/MyI3ConfigSettings.git /tmp/MyI3ConfigSettings
-            cd /tmp/MyI3ConfigSettings
-            if npm install && cargo tauri build; then
-                BINARY_PATH=$(find src-tauri/target/release -maxdepth 1 -type f -executable \( -name "myi3configsettings" -o -name "MyI3ConfigSettings" \) | head -n1)
-                if [ -n "$BINARY_PATH" ]; then
-                    BIN_DIR="$HOME/.local/bin"
-                    mkdir -p "$BIN_DIR"
-                    cp "$BINARY_PATH" "$BIN_DIR/"
-                    echo "Built and installed to $BIN_DIR/$(basename "$BINARY_PATH")"
-                else
-                    echo "Error: Binary not found after build."
-                fi
-            else
-                echo "Build failed. Please install npm and cargo or download the binary manually."
-            fi
-            cd - >/dev/null
-            rm -rf /tmp/MyI3ConfigSettings
         fi
+    else
+        echo "Skipping settings app installation."
+        echo "You can manually install it later from:"
+        echo "  https://github.com/JGH0/MyI3ConfigSettings"
     fi
-
-    cd - >/dev/null
-    rm -rf "$TEMP_DIR"
-else
-    echo "Skipping settings app installation."
-    echo "You can manually install it later from:"
-    echo "  https://github.com/JGH0/MyI3ConfigSettings"
 fi
 
 # Add ~/.local/bin to PATH if not already (for fish shell)
@@ -450,18 +524,24 @@ fi
 echo
 echo "✓ Done"
 echo
-if [ "$WM" = "sway" ]; then
+if [ "$WM" = "aerospace" ]; then
+    echo "For AeroSpace, reload with: aerospace reload-config"
+    echo "Edit config: ~/.aerospace.toml"
+elif [ "$WM" = "sway" ]; then
     echo "For Sway, reload with: Super + Shift + C"
 else
     echo "For i3, reload with: Super + Shift + C"
 fi
-echo
-echo "The Tauri settings app (if installed) will manage your keybindings, theme, input, and workspaces."
-echo "You can launch it with: myi3configsettings"
-echo "It should also appear in your application launcher (rofi, dmenu, etc.)"
+
+if [ "$WM" != "aerospace" ]; then
+    echo
+    echo "The Tauri settings app (if installed) will manage your keybindings, theme, input, and workspaces."
+    echo "You can launch it with: myi3configsettings"
+    echo "It should also appear in your application launcher (rofi, dmenu, etc.)"
+fi
 
 # Optional: if keybindings.json is corrupted, suggest fix
-if grep -q "not found" "$CFG_ROOT/keybindings.json" 2>/dev/null; then
+if [ -f "$CFG_ROOT/keybindings.json" ] && grep -q "not found" "$CFG_ROOT/keybindings.json" 2>/dev/null; then
     echo
     echo "Note: Your keybindings.json appears to be corrupted (contains error messages)."
     echo "To fix it, run: cp $CFG_ROOT/default-keybindings.json $CFG_ROOT/keybindings.json"

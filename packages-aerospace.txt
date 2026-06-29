@@ -1,0 +1,20 @@
+# macOS Homebrew packages for MyI3Config AeroSpace setup
+# Install with: brew install --cask nikitabobko/tap/aerospace && brew install <packages>
+
+# --- Window Manager ---
+# AeroSpace — i3-like tiling window manager for macOS
+# Install via cask: brew install --cask nikitabobko/tap/aerospace
+
+# --- Terminal ---
+kitty
+
+# --- Browser ---
+# Firefox (install from brew or directly from firefox.com)
+# firefox (disabled by default — uncomment if you want brew-managed Firefox)
+
+# --- Tools ---
+jq
+
+# --- Optional: Display management ---
+# displayplacer — CLI for monitor arrangement on macOS
+# brew install displayplacer
