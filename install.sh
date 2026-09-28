@@ -325,105 +325,103 @@ fi
 # ----------------------------
 echo
 echo "[Optional] Install the Tauri settings app (MyI3ConfigSettings)"
-if ask "Would you like to install the settings app?"; then
-    RELEASE_URL="https://github.com/JGH0/MyI3ConfigSettings/releases/download/v1.0.0/myi3configsettings-1.0.0-x86_64.tar.gz"
-    TEMP_DIR=$(mktemp -d)
-    cd "$TEMP_DIR"
 
-    # Use wget or curl
-    DOWNLOAD_CMD=""
-    if command -v wget &>/dev/null; then
-        DOWNLOAD_CMD="wget -q"
-    elif command -v curl &>/dev/null; then
-        DOWNLOAD_CMD="curl -L -o"
-    else
-        echo "Error: Neither wget nor curl is installed. Cannot download."
-        cd - >/dev/null
-        rm -rf "$TEMP_DIR"
-        echo "Skipping settings app installation."
-    fi
+# Copy a built/downloaded binary into ~/.local/bin and (re)create the launcher entry.
+install_settings_binary() {
+    local src_bin="$1"
+    local bin_dir="$HOME/.local/bin"
+    mkdir -p "$bin_dir"
+    cp "$src_bin" "$bin_dir/myi3configsettings"
+    chmod +x "$bin_dir/myi3configsettings"
+    echo "Installed to $bin_dir/myi3configsettings"
 
-    if [ -n "$DOWNLOAD_CMD" ]; then
-        echo "Downloading pre-built binary..."
-        if $DOWNLOAD_CMD app.tar.gz "$RELEASE_URL"; then
-            echo "Extracting..."
-            tar -xzf app.tar.gz
-            # Look for the binary anywhere under the current directory
-            BIN_PATH=$(find . -type f -executable -name "myi3configsettings" | head -n1)
-            if [ -n "$BIN_PATH" ]; then
-                BIN_DIR="$HOME/.local/bin"
-                mkdir -p "$BIN_DIR"
-                cp "$BIN_PATH" "$BIN_DIR/"
-                chmod +x "$BIN_DIR/myi3configsettings"
-                echo "Installed to $BIN_DIR/myi3configsettings"
-
-                # Create desktop entry
-                echo "Creating desktop entry..."
-                mkdir -p "$HOME/.local/share/applications"
-                cat > "$HOME/.local/share/applications/myi3configsettings.desktop" <<EOF
+    mkdir -p "$HOME/.local/share/applications"
+    cat > "$HOME/.local/share/applications/myi3configsettings.desktop" <<EOF
 [Desktop Entry]
 Type=Application
 Name=MyI3ConfigSettings
-Comment=Manage i3/sway keybindings, theme, input, and workspaces
-Exec=$BIN_DIR/myi3configsettings
+Comment=Manage i3/sway keybindings, theme, input, wallpapers, default apps and workspaces
+Exec=$bin_dir/myi3configsettings
 Icon=preferences-system
 Terminal=false
 Categories=Settings;System;
 StartupNotify=true
 EOF
-                echo "Desktop entry created at ~/.local/share/applications/myi3configsettings.desktop"
-            else
-                echo "Error: Binary not found in extracted archive."
-                echo "Falling back to building from source (requires npm and cargo)."
-                cd "$REPO_DIR"
-                rm -rf "$TEMP_DIR"
-                git clone https://github.com/JGH0/MyI3ConfigSettings.git /tmp/MyI3ConfigSettings
-                cd /tmp/MyI3ConfigSettings
-                if npm install && cargo tauri build; then
-                    BINARY_PATH=$(find src-tauri/target/release -maxdepth 1 -type f -executable \( -name "myi3configsettings" -o -name "MyI3ConfigSettings" \) | head -n1)
-                    if [ -n "$BINARY_PATH" ]; then
-                        BIN_DIR="$HOME/.local/bin"
-                        mkdir -p "$BIN_DIR"
-                        cp "$BINARY_PATH" "$BIN_DIR/"
-                        echo "Built and installed to $BIN_DIR/$(basename "$BINARY_PATH")"
-                    else
-                        echo "Error: Binary not found after build."
-                    fi
-                else
-                    echo "Build failed. Please install npm and cargo or download the binary manually."
-                fi
-                cd - >/dev/null
-                rm -rf /tmp/MyI3ConfigSettings
-            fi
-        else
-            echo "Failed to download pre-built binary. Falling back to building from source (requires npm and cargo)."
-            cd "$REPO_DIR"
-            rm -rf "$TEMP_DIR"
-            git clone https://github.com/JGH0/MyI3ConfigSettings.git /tmp/MyI3ConfigSettings
-            cd /tmp/MyI3ConfigSettings
-            if npm install && cargo tauri build; then
-                BINARY_PATH=$(find src-tauri/target/release -maxdepth 1 -type f -executable \( -name "myi3configsettings" -o -name "MyI3ConfigSettings" \) | head -n1)
-                if [ -n "$BINARY_PATH" ]; then
-                    BIN_DIR="$HOME/.local/bin"
-                    mkdir -p "$BIN_DIR"
-                    cp "$BINARY_PATH" "$BIN_DIR/"
-                    echo "Built and installed to $BIN_DIR/$(basename "$BINARY_PATH")"
-                else
-                    echo "Error: Binary not found after build."
-                fi
-            else
-                echo "Build failed. Please install npm and cargo or download the binary manually."
-            fi
-            cd - >/dev/null
-            rm -rf /tmp/MyI3ConfigSettings
-        fi
-    fi
+    echo "Desktop entry created at ~/.local/share/applications/myi3configsettings.desktop"
+}
 
-    cd - >/dev/null
-    rm -rf "$TEMP_DIR"
+# Build from source in a throwaway clone (uses a subshell so the caller's cwd is untouched).
+build_settings_from_source() {
+    local clone_dir
+    clone_dir="$(mktemp -d)"
+    echo "Building MyI3ConfigSettings from source (needs npm + cargo)..."
+    if ! git clone --depth 1 https://github.com/JGH0/MyI3ConfigSettings.git "$clone_dir" 2>/dev/null; then
+        echo "Error: could not clone MyI3ConfigSettings."
+        rm -rf "$clone_dir"
+        return 1
+    fi
+    local rc=1
+    if ( cd "$clone_dir" && npm install && cargo tauri build ); then
+        local bin
+        bin="$(find "$clone_dir/src-tauri/target/release" -maxdepth 1 -type f -executable \( -name myi3configsettings -o -name MyI3ConfigSettings \) | head -n1)"
+        if [ -n "$bin" ]; then
+            install_settings_binary "$bin"
+            rc=0
+        else
+            echo "Error: binary not found after build."
+        fi
+    else
+        echo "Build failed. Install npm + cargo, or download the release binary manually."
+    fi
+    rm -rf "$clone_dir"
+    return $rc
+}
+
+# Try the pre-built release asset. Note: the GitHub release may lag behind the
+# repo, so a source build is preferred when a toolchain is available.
+download_settings_prebuilt() {
+    local url="https://github.com/JGH0/MyI3ConfigSettings/releases/latest/download/myi3configsettings-1.0.0-x86_64.tar.gz"
+    local tmp
+    tmp="$(mktemp -d)"
+    echo "Downloading pre-built binary (may be older than the repo)..."
+    local ok=0
+    if command -v wget &>/dev/null; then
+        wget -q -O "$tmp/app.tar.gz" "$url" || ok=1
+    elif command -v curl &>/dev/null; then
+        curl -fL -o "$tmp/app.tar.gz" "$url" || ok=1
+    else
+        echo "Neither wget nor curl is installed."
+        ok=1
+    fi
+    local bin=""
+    if [ "$ok" = "0" ]; then
+        tar -xzf "$tmp/app.tar.gz" -C "$tmp" 2>/dev/null || true
+        bin="$(find "$tmp" -type f -executable -name myi3configsettings | head -n1)"
+    fi
+    if [ -n "$bin" ]; then
+        install_settings_binary "$bin"
+        rm -rf "$tmp"
+        return 0
+    fi
+    rm -rf "$tmp"
+    echo "Pre-built download unavailable or invalid."
+    return 1
+}
+
+if ask "Would you like to install the settings app?"; then
+    if command -v cargo &>/dev/null && command -v npm &>/dev/null; then
+        echo "Toolchain found - building the settings app from source so it matches the repo..."
+        if ! build_settings_from_source; then
+            echo "Source build failed; falling back to the pre-built release."
+            download_settings_prebuilt || echo "Could not install the settings app automatically."
+        fi
+    else
+        echo "npm/cargo not found; installing the pre-built release (may be older than the repo)."
+        download_settings_prebuilt || echo "Could not install the settings app automatically."
+    fi
 else
     echo "Skipping settings app installation."
-    echo "You can manually install it later from:"
+    echo "You can install it later from:"
     echo "  https://github.com/JGH0/MyI3ConfigSettings"
 fi
 
