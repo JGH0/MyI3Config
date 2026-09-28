@@ -7,9 +7,13 @@ input.json
 input.conf
 workspaces.json
 workspaces.conf
+wallpaper.json
+wallpaper.conf
+manual.json
 
 # Generated scripts
 scripts/theme-startup.sh
+scripts/wallpaper.sh
 scripts/cycle-layout.sh
 
 # User-modified scripts

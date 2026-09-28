@@ -1,25 +1,28 @@
 {
   "keyboard": {
     "repeatRate": 30,
-    "repeatDelay": 300
+    "repeatDelay": 300,
+    "xkbModel": "pc105",
+    "xkbOptions": "",
+    "xkbNumlock": false
   },
   "mouse": {
     "accelProfile": "adaptive",
     "accelSpeed": 0,
     "naturalScroll": false,
-    "tapToClick": false
+    "tapToClick": false,
+    "leftHanded": false,
+    "dwt": false,
+    "scrollMethod": "two_finger",
+    "scrollButton": 274,
+    "tapButtonMap": "lrm",
+    "dragLock": false,
+    "middleEmulation": false,
+    "clickMethod": "none"
   },
   "layouts": [
-    {
-      "layout": "us",
-      "variant": "workman"
-    },
-    {
-      "layout": "ch",
-      "variant": "de"
-    }
+    { "layout": "us", "variant": "workman" },
+    { "layout": "ch", "variant": "de" }
   ],
-  "layoutKeys": [
-    "$mod+space"
-  ]
+  "layoutKeys": ["$mod+space"]
 }

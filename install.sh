@@ -115,37 +115,29 @@ generate_input_conf() {
     {
         jq -r '
             "input type:keyboard {",
-            "    repeat_rate \(.keyboard.repeatRate)",
-            "    repeat_delay \(.keyboard.repeatDelay)",
-            if .keyboard.xkbModel and .keyboard.xkbModel != "" then
-                "    xkb_model \(.keyboard.xkbModel)"
-            else empty end,
-            if .keyboard.xkbOptions and .keyboard.xkbOptions != "" then
-                "    xkb_options \(.keyboard.xkbOptions)"
-            else empty end,
-            if .keyboard.xkbNumlock then
-                "    xkb_numlock enabled"
-            else empty end,
-            if .layouts | length > 0 then
+            if (.keyboard.repeatRate != null) then "    repeat_rate \(.keyboard.repeatRate)" else empty end,
+            if (.keyboard.repeatDelay != null) then "    repeat_delay \(.keyboard.repeatDelay)" else empty end,
+            if (.keyboard.xkbModel // "") != "" then "    xkb_model \(.keyboard.xkbModel)" else empty end,
+            if (.keyboard.xkbOptions // "") != "" then "    xkb_options \(.keyboard.xkbOptions)" else empty end,
+            if .keyboard.xkbNumlock then "    xkb_numlock enabled" else empty end,
+            if (.layouts | length) > 0 then
                 "    xkb_layout " + (.layouts | map(.layout) | join(",")),
                 "    xkb_variant " + (.layouts | map(.variant // "") | join(","))
             else empty end,
             "}",
             "input type:touchpad {",
-            "    accel_profile \(.mouse.accelProfile)",
-            "    pointer_accel \(.mouse.accelSpeed)",
-            "    natural_scroll \(if .mouse.naturalScroll then "enabled" else "disabled" end)",
-            "    tap \(if .mouse.tapToClick then "enabled" else "disabled" end)",
-            "    left_handed \(if .mouse.leftHanded then "enabled" else "disabled" end)",
-            "    dwt \(if .mouse.dwt then "enabled" else "disabled" end)",
-            "    scroll_method \(.mouse.scrollMethod)",
-            if .mouse.scrollMethod == "on_button_down" then
-                "    scroll_button \(.mouse.scrollButton)"
-            else empty end,
-            "    tap_button_map \(.mouse.tapButtonMap)",
-            "    drag_lock \(if .mouse.dragLock then "enabled" else "disabled" end)",
-            "    middle_emulation \(if .mouse.middleEmulation then "enabled" else "disabled" end)",
-            "    click_method \(.mouse.clickMethod)",
+            if (.mouse.accelProfile // "") != "" then "    accel_profile \(.mouse.accelProfile)" else empty end,
+            if (.mouse.accelSpeed != null) then "    pointer_accel \(.mouse.accelSpeed)" else empty end,
+            if (.mouse.naturalScroll != null) then "    natural_scroll \(if .mouse.naturalScroll then "enabled" else "disabled" end)" else empty end,
+            if (.mouse.tapToClick != null) then "    tap \(if .mouse.tapToClick then "enabled" else "disabled" end)" else empty end,
+            if (.mouse.leftHanded != null) then "    left_handed \(if .mouse.leftHanded then "enabled" else "disabled" end)" else empty end,
+            if (.mouse.dwt != null) then "    dwt \(if .mouse.dwt then "enabled" else "disabled" end)" else empty end,
+            if (.mouse.scrollMethod // "") != "" then "    scroll_method \(.mouse.scrollMethod)" else empty end,
+            if (.mouse.scrollMethod == "on_button_down") and ((.mouse.scrollButton != null)) then "    scroll_button \(.mouse.scrollButton)" else empty end,
+            if (.mouse.tapButtonMap // "") != "" then "    tap_button_map \(.mouse.tapButtonMap)" else empty end,
+            if (.mouse.dragLock != null) then "    drag_lock \(if .mouse.dragLock then "enabled" else "disabled" end)" else empty end,
+            if (.mouse.middleEmulation != null) then "    middle_emulation \(if .mouse.middleEmulation then "enabled" else "disabled" end)" else empty end,
+            if (.mouse.clickMethod // "") != "" then "    click_method \(.mouse.clickMethod)" else empty end,
             "}"
         ' "$json_file"
     } > "$conf_file"
@@ -160,6 +152,17 @@ generate_workspaces_conf() {
         jq -r '.names | to_entries[] | select(.value != .key) | "workspace " + .key + " name \"" + .value + "\""' "$json_file"
         jq -r '.assignments[] | "assign [class=\"" + .appClass + "\"] workspace " + (.workspace | tostring)' "$json_file"
     } > "$conf_file"
+    echo "Generated $conf_file"
+}
+
+generate_wallpaper_conf() {
+    local json_file="$CFG_ROOT/wallpaper.json"
+    local conf_file="$CFG_ROOT/wallpaper.conf"
+    if [ -f "$json_file" ] && [ "$(jq -r '.current // ""' "$json_file")" != "" ]; then
+        echo "exec --no-startup-id ~/.config/MyI3Config/scripts/wallpaper.sh" > "$conf_file"
+    else
+        echo "# Wallpaper – no wallpaper set" > "$conf_file"
+    fi
     echo "Generated $conf_file"
 }
 
@@ -268,15 +271,18 @@ cp -rn "$REPO_DIR/." "$CFG_ROOT" 2>/dev/null || true
     cp "$CFG_ROOT/default-input.json" "$CFG_ROOT/input.json"
 [ -f "$CFG_ROOT/default-workspaces.json" ] && [ ! -f "$CFG_ROOT/workspaces.json" ] && \
     cp "$CFG_ROOT/default-workspaces.json" "$CFG_ROOT/workspaces.json"
+[ -f "$CFG_ROOT/default-wallpaper.json" ] && [ ! -f "$CFG_ROOT/wallpaper.json" ] && \
+    cp "$CFG_ROOT/default-wallpaper.json" "$CFG_ROOT/wallpaper.json"
 
 # Generate .conf files
 generate_keybindings_conf
 generate_theme_conf
 generate_input_conf
 generate_workspaces_conf
+generate_wallpaper_conf
 
 # Ensure include lines are in main config
-for f in keybindings theme input workspaces; do
+for f in keybindings theme input workspaces wallpaper; do
     ensure_include_line "$f"
 done
 
